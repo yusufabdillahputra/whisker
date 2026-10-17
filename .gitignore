@@ -1,0 +1,35 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Node / Vite (frontend React)
+node_modules/
+dist/
+.vite/
+*.local
+
+# Env & rahasia — JANGAN commit
+.env
+.env.*
+!.env.example
+
+# Playwright (E2E) — project di test/playwright/; hasil & bukti TIDAK PERNAH di-commit
+# (bukti terpilih disimpan di vault wiki-whisker: Assets/Playwright/)
+/test/playwright/test-results/
+/test/playwright/playwright-report/
+/test/playwright/blob-report/
+/test/playwright/evidence/
+/test/playwright/.cache/
+/test/playwright/.auth/
+/test/playwright/.e2e.env
+
+# Data runtime lokal (vault/graph yang dikelola aplikasi saat dev)
+/data/
+
+# Editor & OS
+.idea/
+.vscode/
+.DS_Store
+
+# Claude Code — setting lokal per-mesin
+.claude/settings.local.json
