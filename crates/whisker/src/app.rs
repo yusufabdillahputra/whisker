@@ -29,10 +29,40 @@ const VIEWPORT_DEFAULT: &str =
 const VIEWPORT: &str =
     r#"<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />"#;
 
-/// Skrip tema inline (sebelum CSS dimuat, cegah kedip) + favicon. Token tema final = Task 11.
-const HEAD_EXTRAS: &str = r#"<link rel="icon" href="data:," />
-<script>(function(){try{var t=localStorage.getItem("theme");var d=t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d)}catch(e){}})()</script>
-"#;
+/// Favicon SVG dari canvas logo (DESIGN.md §10), di-inline sebagai data URI.
+const FAVICON_SVG: &str = include_str!("../../../frontend/src/assets/logo/whisker-favicon-32.svg");
+
+/// Skrip tema inline: dijalankan sebelum CSS dimuat agar tidak berkedip. Kunci `whisker-theme` dan
+/// logikanya sama dengan `frontend/src/lib/theme.ts` (nilai tak sah = `system`).
+const THEME_SCRIPT: &str = r#"<script>(function(){try{var p=localStorage.getItem("whisker-theme");if(p!=="light"&&p!=="dark")p="system";var d=p==="dark"||(p==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);var r=document.documentElement;r.classList.toggle("dark",d);r.style.colorScheme=d?"dark":"light"}catch(e){}})()</script>"#;
+
+/// Isi `<head>` tambahan: favicon + skrip tema.
+fn head_extras() -> String {
+    format!(
+        "<link rel=\"icon\" type=\"image/svg+xml\" href=\"data:image/svg+xml,{}\" />\n{THEME_SCRIPT}\n",
+        svg_data_uri(FAVICON_SVG)
+    )
+}
+
+/// Percent-encode SVG untuk data URI di atribut HTML: spasi beruntun diringkas, karakter yang
+/// bermakna di URL/atribut (`%`, `#`, `<`, `>`, `"`, `&`, spasi) di-encode.
+fn svg_data_uri(svg: &str) -> String {
+    let compact = svg.split_whitespace().collect::<Vec<_>>().join(" ");
+    let mut out = String::with_capacity(compact.len() * 2);
+    for c in compact.chars() {
+        match c {
+            '%' => out.push_str("%25"),
+            '#' => out.push_str("%23"),
+            '<' => out.push_str("%3C"),
+            '>' => out.push_str("%3E"),
+            '"' => out.push_str("%22"),
+            '&' => out.push_str("%26"),
+            ' ' => out.push_str("%20"),
+            c => out.push(c),
+        }
+    }
+    out
+}
 
 #[derive(Debug)]
 pub enum AppError {
@@ -82,7 +112,7 @@ pub fn inertia_config(vite_dev_server: Option<&str>) -> Result<InertiaConfig, Ap
     }
     .title("Whisker")
     .entry(VITE_ENTRY)
-    .head_extras(HEAD_EXTRAS);
+    .head_extras(head_extras());
     Ok(InertiaConfig::new().root_view(WhiskerRootView(view)))
 }
 
@@ -93,20 +123,17 @@ pub fn build_app(web: Router, extra: Router) -> Router {
     web.merge(extra).nest_service("/build", assets)
 }
 
-/// Rakit app lengkap: router web (sesi, guard, CSRF), router spike tersisa, `/health`, `/mcp`,
-/// dan aset ter-embed.
+/// Rakit app lengkap: router web (sesi, guard, CSRF), `/health`, `/mcp`, dan aset ter-embed.
 ///
-/// `csrf_secret` (≥ 32 byte) dipakai bersama router web dan spike agar cookie `XSRF-TOKEN` sama.
+/// `csrf_secret` (≥ 32 byte) = secret HMAC `CsrfLayer` router web (satu-satunya, ruling K15).
 pub fn compose_app(
     pool: PgPool,
     config: &Config,
     csrf_secret: Vec<u8>,
 ) -> Result<Router, AppError> {
     let inertia = inertia_config(config.vite_dev_server.as_deref())?;
-    let spike =
-        whisker_web::spike::router(inertia.clone(), csrf_secret.clone(), config.cookie_secure);
     let state = AppState::new(pool.clone(), web_config(config, csrf_secret));
-    let web = web_router(state, inertia).merge(spike);
+    let web = web_router(state, inertia);
     let mcp = whisker_mcp::mcp_router(pool.clone(), mcp_config(&config.public_url));
     Ok(build_app(web, health_router(pool).merge(mcp)))
 }
@@ -140,5 +167,29 @@ pub fn mcp_config(public_url: &Url) -> McpConfig {
     let origin = public_url.origin();
     McpConfig {
         allowed_origin: origin.is_tuple().then(|| origin.ascii_serialization()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn favicon_data_uri_is_attribute_safe() {
+        let uri = svg_data_uri(FAVICON_SVG);
+        assert!(uri.starts_with("%3Csvg%20"), "{uri}");
+        for bad in ['"', '<', '>', '#', ' ', '\n', '&'] {
+            assert!(!uri.contains(bad), "karakter {bad:?} lolos: {uri}");
+        }
+        assert!(uri.contains("%23FF7A45"), "titik hidung aksen: {uri}");
+    }
+
+    #[test]
+    fn head_extras_has_favicon_and_theme_script() {
+        let head = head_extras();
+        assert!(head.starts_with(
+            r#"<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg"#
+        ));
+        assert!(head.contains(r#"localStorage.getItem("whisker-theme")"#));
     }
 }

@@ -6,7 +6,6 @@ pub mod page;
 pub mod props;
 pub mod routes;
 pub mod session;
-pub mod spike;
 pub mod throttle;
 
 use axum::Router;

@@ -11,12 +11,22 @@ use whisker::app::{build_app, inertia_config, mcp_config};
 use whisker_core::token::create_token;
 use whisker_core::user::{NewUser, Role, create_user};
 use whisker_mcp::mcp_router;
+use whisker_web::{AppState, WebConfig, web_router};
 
 const TOOLS_LIST: &str = r#"{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}"#;
 
 fn app(pool: PgPool) -> Router {
-    let web = whisker_web::spike::router(inertia_config(None).unwrap(), vec![9u8; 32], false);
     let public = Url::parse("http://localhost:8080").unwrap();
+    let state = AppState::new(
+        pool.clone(),
+        WebConfig {
+            cookie_secure: false,
+            public_url: public.clone(),
+            trusted_proxies: Vec::new(),
+            csrf_secret: vec![9u8; 32],
+        },
+    );
+    let web = web_router(state, inertia_config(None).unwrap());
     build_app(web, mcp_router(pool, mcp_config(&public)))
 }
 

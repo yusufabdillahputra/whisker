@@ -41,7 +41,7 @@ fn get(uri: &str) -> Request<Body> {
 }
 
 #[sqlx::test(migrator = "whisker::startup::MIGRATOR")]
-async fn composed_app_mounts_web_health_mcp_spike_and_assets(pool: PgPool) {
+async fn composed_app_mounts_web_health_mcp_and_assets(pool: PgPool) {
     let app = app(pool);
 
     let (status, _, body) = send(&app, get("/health")).await;
@@ -94,10 +94,34 @@ async fn composed_app_mounts_web_health_mcp_spike_and_assets(pool: PgPool) {
         "{html}"
     );
 
-    // Rute spike tersisa (ruling K3) masih terpasang sampai Task 11.
-    assert_eq!(
-        send(&app, get("/spike/forbidden")).await.0,
-        StatusCode::FORBIDDEN
+    // Router spike dihapus di Task 11 (ruling K3, K15): sisa rutenya jatuh ke fallback 404.
+    for path in ["/spike/forbidden", "/spike/echo"] {
+        assert_eq!(
+            send(&app, get(path)).await.0,
+            StatusCode::NOT_FOUND,
+            "{path}"
+        );
+    }
+}
+
+#[sqlx::test(migrator = "whisker::startup::MIGRATOR")]
+async fn root_view_has_theme_script_and_svg_favicon(pool: PgPool) {
+    let app = app(pool);
+    let (status, _, html) = send(&app, get("/login")).await;
+    assert_eq!(status, StatusCode::OK);
+    // Skrip tema inline memakai kunci yang sama dengan `frontend/src/lib/theme.ts`.
+    assert!(
+        html.contains(r#"localStorage.getItem("whisker-theme")"#),
+        "{html}"
+    );
+    assert!(!html.contains(r#"getItem("theme")"#), "kunci lama: {html}");
+    assert!(
+        html.contains(r#"<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,"#),
+        "{html}"
+    );
+    assert!(
+        !html.contains(r#"href="data:,""#),
+        "favicon kosong lama: {html}"
     );
 }
 

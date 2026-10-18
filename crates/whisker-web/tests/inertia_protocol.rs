@@ -1,5 +1,6 @@
-//! Spike veer (ADR-001): protokol Inertia lewat router Axum nyata. `GET /` spike diganti
-//! `Projects/Index` di Task 10 (ruling K3); kunjungan page diuji lewat `GET /login` `web_router`.
+//! Protokol Inertia (veer, ADR-001) lewat router Axum nyata: kunjungan page lewat `GET /login`
+//! `web_router`. Router spike dihapus di Task 11 (ruling K3, K15); CSRF dan validasi 422 diuji di
+//! `csrf.rs` dan `auth_flow.rs`.
 
 use axum::Router;
 use axum::body::Body;
@@ -18,10 +19,6 @@ fn cfg() -> InertiaConfig {
     InertiaConfig::new()
         .root_view(MinimalRootView::new().title("Whisker"))
         .version_str(VERSION)
-}
-
-fn app() -> Router {
-    whisker_web::spike::router(cfg(), SECRET.to_vec(), false)
 }
 
 /// `web_router` dengan pool lazy: `GET /login` tanpa cookie sesi tidak menyentuh DB.
@@ -52,47 +49,6 @@ fn inertia_get(uri: &str) -> Request<Body> {
         .header("X-Inertia", "true")
         .header("X-Inertia-Version", VERSION)
         .body(Body::empty())
-        .unwrap()
-}
-
-/// GET pertama → nilai cookie `XSRF-TOKEN` yang diterbitkan `CsrfLayer`.
-async fn xsrf_token(app: &Router) -> String {
-    let resp = app
-        .clone()
-        .oneshot(inertia_get("/spike/forbidden"))
-        .await
-        .unwrap();
-    let set_cookie = resp
-        .headers()
-        .get_all(header::SET_COOKIE)
-        .iter()
-        .map(|v| v.to_str().unwrap().to_owned())
-        .find(|c| c.starts_with("XSRF-TOKEN="))
-        .expect("CsrfLayer harus memasang cookie XSRF-TOKEN");
-    assert!(
-        !set_cookie.to_ascii_lowercase().contains("httponly"),
-        "XSRF-TOKEN harus terbaca JS (bukan HttpOnly): {set_cookie}"
-    );
-    set_cookie
-        .trim_start_matches("XSRF-TOKEN=")
-        .split(';')
-        .next()
-        .unwrap()
-        .to_owned()
-}
-
-fn echo_post(text: &str, token: Option<&str>, cookie: Option<&str>) -> Request<Body> {
-    let mut req = Request::post("/spike/echo")
-        .header("X-Inertia", "true")
-        .header("X-Inertia-Version", VERSION)
-        .header(header::CONTENT_TYPE, "application/json");
-    if let Some(c) = cookie {
-        req = req.header(header::COOKIE, format!("XSRF-TOKEN={c}"));
-    }
-    if let Some(t) = token {
-        req = req.header("X-XSRF-TOKEN", t);
-    }
-    req.body(Body::from(serde_json::json!({ "text": text }).to_string()))
         .unwrap()
 }
 
@@ -146,74 +102,33 @@ async fn version_mismatch_returns_409_with_location() {
 }
 
 #[tokio::test]
-async fn spike_root_route_removed() {
-    let resp = app().oneshot(inertia_get("/")).await.unwrap();
-    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
-}
-
-#[tokio::test]
-async fn post_without_xsrf_header_is_rejected() {
-    let app = app();
-    let token = xsrf_token(&app).await;
-
-    // Cookie ada, header tidak ada.
-    let resp = app
-        .clone()
-        .oneshot(echo_post("halo", None, Some(&token)))
-        .await
-        .unwrap();
-    assert_eq!(resp.status().as_u16(), 419);
-
-    // Tanpa cookie dan tanpa header.
-    let resp = app.oneshot(echo_post("halo", None, None)).await.unwrap();
-    assert_eq!(resp.status().as_u16(), 419);
-}
-
-#[tokio::test]
-async fn post_with_valid_xsrf_is_accepted() {
-    let app = app();
-    let token = xsrf_token(&app).await;
-    let resp = app
-        .oneshot(echo_post("halo", Some(&token), Some(&token)))
-        .await
-        .unwrap();
-    assert_eq!(resp.status(), StatusCode::OK);
-    assert_eq!(resp.headers()["x-inertia"], "true");
-    let page = body_json(resp).await;
-    assert_eq!(page["component"], "Spike/Ping");
-    assert_eq!(page["url"], "/spike/echo");
-    assert!(page["props"]["message"].as_str().unwrap().contains("halo"));
-}
-
-#[tokio::test]
-async fn validation_error_returns_422_with_errors_prop() {
-    let app = app();
-    let token = xsrf_token(&app).await;
-    let resp = app
-        .oneshot(echo_post("", Some(&token), Some(&token)))
-        .await
-        .unwrap();
-    assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
-    assert_eq!(resp.headers()["x-inertia"], "true");
-    let page = body_json(resp).await;
-    assert_eq!(page["component"], "Spike/Ping");
-    assert!(!page["props"]["errors"]["text"].as_str().unwrap().is_empty());
+async fn spike_routes_removed() {
+    for path in ["/spike/forbidden", "/spike/echo"] {
+        let resp = web_app().oneshot(inertia_get(path)).await.unwrap();
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND, "{path}");
+        let page = body_json(resp).await;
+        assert_eq!(page["component"], "Errors/NotFound");
+    }
 }
 
 #[tokio::test]
 async fn page_with_status_403_keeps_inertia_payload() {
-    let resp = app()
-        .oneshot(inertia_get("/spike/forbidden"))
-        .await
-        .unwrap();
+    let app = Router::new()
+        .route(
+            "/terlarang",
+            get(|ctx: InertiaCtx| async move { whisker_web::routes::errors::forbidden(ctx) }),
+        )
+        .layer(veer::InertiaLayer::new(cfg()));
+    let resp = app.oneshot(inertia_get("/terlarang")).await.unwrap();
     assert_eq!(resp.status(), StatusCode::FORBIDDEN);
     assert_eq!(resp.headers()["x-inertia"], "true");
     let page = body_json(resp).await;
-    assert_eq!(page["component"], "Spike/Ping");
-    assert_eq!(page["url"], "/spike/forbidden");
+    assert_eq!(page["component"], "Errors/Forbidden");
+    assert_eq!(page["props"]["status"], 403);
+    assert_eq!(page["url"], "/terlarang");
 }
 
-// --- Bukti tambahan spike (butir i, j): mekanisme veer di luar router spike. ---
+// --- Mekanisme veer tambahan (bukti spike butir i, j). ---
 
 #[tokio::test]
 async fn shared_props_are_resolved_per_request() {
@@ -228,7 +143,7 @@ async fn shared_props_are_resolved_per_request() {
         .route(
             "/a",
             get(|ctx: InertiaCtx| async move {
-                render_page(ctx, "Spike/Ping", serde_json::json!({ "message": "a" }))
+                render_page(ctx, "Test/Page", serde_json::json!({ "message": "a" }))
             }),
         )
         .layer(veer::InertiaLayer::new(cfg));
@@ -246,13 +161,13 @@ async fn history_encryption_can_be_enabled_per_response() {
         .route(
             "/plain",
             get(|ctx: InertiaCtx| async move {
-                render_page(ctx, "Spike/Ping", serde_json::json!({ "message": "p" }))
+                render_page(ctx, "Test/Page", serde_json::json!({ "message": "p" }))
             }),
         )
         .route(
             "/secret",
             get(|ctx: InertiaCtx| async move {
-                ctx.render("Spike/Ping", serde_json::json!({ "message": "s" }))
+                ctx.render("Test/Page", serde_json::json!({ "message": "s" }))
                     .encrypt_history()
             }),
         )
