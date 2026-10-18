@@ -2,6 +2,42 @@
 
 use std::collections::BTreeMap;
 
+/// Error domain inti; dipetakan ke respons HTTP di lapisan web.
+#[derive(Debug)]
+pub enum CoreError {
+    NotFound,
+    Validation(ValidationErrors),
+    Conflict(&'static str),
+    Database(sqlx::Error),
+    Internal(String),
+}
+
+impl std::fmt::Display for CoreError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NotFound => f.write_str("tidak ditemukan"),
+            Self::Validation(_) => f.write_str("validasi gagal"),
+            Self::Conflict(m) => write!(f, "konflik: {m}"),
+            Self::Database(e) => write!(f, "database: {e}"),
+            Self::Internal(m) => write!(f, "internal: {m}"),
+        }
+    }
+}
+
+impl std::error::Error for CoreError {}
+
+impl From<sqlx::Error> for CoreError {
+    fn from(e: sqlx::Error) -> Self {
+        Self::Database(e)
+    }
+}
+
+impl From<ValidationErrors> for CoreError {
+    fn from(e: ValidationErrors) -> Self {
+        Self::Validation(e)
+    }
+}
+
 /// Error validasi per field form. Kunci = nama field form (camelCase), nilai = pesan pertama.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ValidationErrors {

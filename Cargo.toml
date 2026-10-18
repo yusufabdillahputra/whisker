@@ -27,3 +27,10 @@ tracing = "=0.1.44"
 tracing-subscriber = { version = "=0.3.23", features = ["env-filter"] }
 # ADR-007: driver + migration + tes integrasi. TLS rustls (Neon butuh sslmode=require).
 sqlx = { version = "=0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "macros", "migrate"] }
+
+# Task 04: primitif auth (Argon2id, PAT whk_, id sesi). Pin eksak.
+argon2 = "=0.6.0"
+sha2 = "=0.11.1"
+crc32fast = "=1.5.2"
+base64 = "=0.23.1"
+subtle = "=2.6.1"
