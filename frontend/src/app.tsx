@@ -2,6 +2,7 @@ import { createInertiaApp, router } from "@inertiajs/react";
 import type { ComponentType } from "react";
 import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { installCsrfRecovery } from "@/lib/csrf-recovery";
 import "./styles/globals.css";
 
@@ -21,6 +22,8 @@ void createInertiaApp({
     createRoot(el).render(
       <ThemeProvider>
         <App {...props} />
+        {/* Di luar page agar toast bertahan saat page dipasang ulang / berpindah (Keamanan → Projects). */}
+        <Toaster />
       </ThemeProvider>,
     );
   },

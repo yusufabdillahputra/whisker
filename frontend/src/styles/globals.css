@@ -38,6 +38,17 @@
   --overlay: rgb(20 22 27 / 0.45);
   --link: #b4471a;
   --link-hover: #8a3412;
+  /* Badge data — palet canvas `wkPal` [latar, teks] (DESIGN.md §7); metode HTTP: Confirmation 10. */
+  --badge-sky: #e0f2fe;
+  --badge-sky-foreground: #075985;
+  --badge-green: #dcfce7;
+  --badge-green-foreground: #14532d;
+  --badge-amber: #fef3c7;
+  --badge-amber-foreground: #78350f;
+  --badge-red: #fee2e2;
+  --badge-red-foreground: #991b1b;
+  --badge-gray: #eef0f3;
+  --badge-gray-foreground: #3b4049;
   --radius: 0.5rem;
 }
 
@@ -66,6 +77,19 @@
   --code-foreground: #e6e8ec;
   --dashed: #4a515e;
   --overlay: rgb(0 0 0 / 0.6);
+  /* Link gelap (Confirmation 10): orange-300 / orange-200 — ±11,3:1 / ±14,1:1 di #0E1014 (AA). */
+  --link: #fdba74;
+  --link-hover: #fed7aa;
+  --badge-sky: #0c2a4a;
+  --badge-sky-foreground: #7dd3fc;
+  --badge-green: #0f3a26;
+  --badge-green-foreground: #86efac;
+  --badge-amber: #3a2a12;
+  --badge-amber-foreground: #fcd34d;
+  --badge-red: #3a1616;
+  --badge-red-foreground: #fca5a5;
+  --badge-gray: #232830;
+  --badge-gray-foreground: #c9ced6;
 }
 
 @theme inline {
@@ -101,6 +125,16 @@
   --color-overlay: var(--overlay);
   --color-link: var(--link);
   --color-link-hover: var(--link-hover);
+  --color-badge-sky: var(--badge-sky);
+  --color-badge-sky-foreground: var(--badge-sky-foreground);
+  --color-badge-green: var(--badge-green);
+  --color-badge-green-foreground: var(--badge-green-foreground);
+  --color-badge-amber: var(--badge-amber);
+  --color-badge-amber-foreground: var(--badge-amber-foreground);
+  --color-badge-red: var(--badge-red);
+  --color-badge-red-foreground: var(--badge-red-foreground);
+  --color-badge-gray: var(--badge-gray);
+  --color-badge-gray-foreground: var(--badge-gray-foreground);
 
   /* Radius DESIGN.md §5: 6 badge/menu item · 8 tombol/input · 10 ubin/menu · 14 kartu/dialog. */
   --radius-sm: 6px;

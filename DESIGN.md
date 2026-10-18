@@ -48,7 +48,7 @@ Sumber: fungsi `wkTheme(dark)` di semua artboard canvas (nilainya identik antar-
 | `offBg` / `offFg` | badge status non-aktif | `#EEF0F3` / `#5A606B` | `#2A2F38` / `#A3A9B4` |
 | `overlay` | latar di balik dialog | `rgba(20,22,27,0.45)` | `rgba(0,0,0,0.6)` |
 | accent | aksen brand (dipakai hemat) | `#FF7A45` | `#FF7A45` |
-| link | tautan teks / hover | `#B4471A` / `#8A3412` | **terbuka** — canvas hanya merender tautan di tema terang |
+| link | tautan teks / hover | `#B4471A` / `#8A3412` | `#FDBA74` / `#FED7AA` (turunan, Confirmation 10) |
 
 ### Pemetaan ke variabel CSS shadcn/ui
 
@@ -74,6 +74,10 @@ di shadcn, `accent` adalah **latar hover** (bukan aksen brand); aksen brand mema
 
 Kontras (rumus luminans relatif WCAG): teks utama dan muted lolos AA di kedua tema
 (muted terang ±5,8:1 di `bg`; muted gelap ±7,5:1 di `surface`).
+Link gelap (canvas hanya merender tautan di tema terang): `#B4471A` hanya ±3,5:1 di `#0E1014`, maka
+`.dark` memakai orange-300 `#FDBA74` (±11,3:1 di `bg`, ±10,4:1 di `surface`) dan hover orange-200
+`#FED7AA` (±14,1:1 di `bg`) — skala Tailwind yang sama dengan aturan badge Tipe gelap (`-300`).
+Link terang lolos AA: `#B4471A` ±5,4:1 di `surface`, ±5,0:1 di `bg`.
 
 ## 3. Tipografi
 
@@ -127,7 +131,7 @@ tidak dipakai — kartu `p-6` dengan gap grid `gap-6` (web), `p-4` / `gap-4` (mo
 | Bayangan menu | `0 16px 32px rgba(20,22,27,0.14)` |
 | Bayangan dialog | `0 24px 48px rgba(20,22,27,0.18)` |
 | Bayangan segmen aktif | `0 1px 2px rgba(20,22,27,0.14)` |
-| Ring fokus | `outline: 2px solid #FF7A45; outline-offset: 2px` (`:focus-visible`) |
+| Ring fokus | `outline: 2px solid #FF7A45; outline-offset: 2px` (`:focus-visible`); aturan dasar di `globals.css`, komponen `ui/*` tidak menimpanya (tanpa ring shadcn 3px / `outline-none`) |
 | Kartu hover | border berubah ke `#FF7A45`, `translateY(-1px)`, transisi 150 ms |
 
 ## 6. Komponen
@@ -142,7 +146,7 @@ tidak dipakai — kartu `p-6` dengan gap grid `gap-6` (web), `p-4` / `gap-4` (mo
 | Card | latar `surface`, border `border`, radius 14, `p-6 gap-6` | `p-4 gap-4` |
 | Dialog | `p-6 gap-6`, `max-w-[480px]`, radius 14, overlay `overlay` | margin 16 px |
 | Header app | `h-14` (56 px), `px-8`, border-bottom `border`, latar `surface` | `h-14` + safe area, `px-2` |
-| Menu akun | lebar 224 px, `p-1`, item `min-h-10 px-2 gap-2`, radius 10 | item 44 px |
+| Menu akun | lebar 224 px, `p-1`, item `min-h-10 px-2 gap-2`, radius 10; item: Tokens, Account, Admin Users (admin), Lisensi pihak ketiga (turunan), Logout | item 44 px |
 | Tombol akun | pill `h-11`, avatar 34 px + chevron | sama |
 | Kartu project | `min-h-[164px] p-6`, radius 14, ubin ikon 44 px radius 10 | satu kolom |
 | Sidebar (sidebar-07) | lebar `16rem`, ikon `3rem`, item `h-8 gap-2 px-2` | di Sheet, item `h-11` |
@@ -180,6 +184,10 @@ Badge status akun/token (canvas `AccountView`): tinggi 24 px, pill, 12 px / 600.
 
 "Solid" dipakai untuk isian batang progres / meteran.
 
+Di kode, pasangan `[latar, teks]` hue yang sudah dipakai menjadi token `--badge-<hue>` /
+`--badge-<hue>-foreground` di `globals.css` (kelas `bg-badge-sky text-badge-sky-foreground`, dst.);
+saat ini sky, green, amber, red, gray. Hue lain ditambahkan dengan pola yang sama saat dibutuhkan.
+
 ### Pemetaan badge
 
 | Kelompok | Nilai → label (hue) | Sumber |
@@ -193,7 +201,7 @@ Badge status akun/token (canvas `AccountView`): tinggi 24 px, pill, 12 px / 600.
 | Tag teknis, hash commit, id sesi | gray, varian mono | canvas |
 | Status akun / token | Aktif (`okBg`/`okFg`) · Revoked, Wajib Ganti Password (`offBg`/`offFg`) | canvas |
 | Tipe (`area`) | Backend (sky) · Frontend (violet) · Shared (teal) · Infra (amber) · MCP (pink) · Fullstack (Monolith) (green); Terang `-100`/`-800`, Gelap `-900`/`-300` skala Tailwind | knowledge vault "Desain UI Layout Spacing dan Navigasi" (sintesis, bukan canvas) |
-| Method HTTP | **terbuka** — belum digambar di canvas. Usulan turunan untuk halaman API: GET (sky) · POST (green) · PUT/PATCH (amber) · DELETE (red), varian mono; butuh konfirmasi owner sebelum dipakai | turunan |
+| Method HTTP | GET (sky) · POST (green) · PUT/PATCH (amber) · DELETE (red); method lain (gray); varian mono, label huruf besar (`HttpMethodBadge`) | turunan, Confirmation 10 |
 
 Teks label di kode boleh huruf kecil (nilai data); yang tampil selalu **Title Case**.
 
