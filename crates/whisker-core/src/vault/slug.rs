@@ -16,13 +16,15 @@ pub fn is_valid_slug(s: &str) -> bool {
     alnum(b[0]) && b[1..].iter().all(|&c| alnum(c) || c == b'-')
 }
 
-/// NFKD, buang tanda diakritik, lowercase, non-`[a-z0-9]` jadi `-`, rapatkan, pangkas `-` di tepi,
+/// NFKD, buang tanda diakritik, lowercase, transliterasi `ß æ œ ø đ ł þ ð`, non-`[a-z0-9]` jadi `-`, rapatkan, pangkas `-` di tepi,
 /// potong 63, kosong -> `SLUG_FALLBACK`.
 pub fn slugify(name: &str) -> String {
     let mut out = String::with_capacity(name.len());
     for c in name.nfkd().filter(|c| !is_combining_mark(*c)) {
         for l in c.to_lowercase() {
-            if l.is_ascii_lowercase() || l.is_ascii_digit() {
+            if let Some(t) = transliterate(l) {
+                out.push_str(t);
+            } else if l.is_ascii_lowercase() || l.is_ascii_digit() {
                 out.push(l);
             } else if !out.ends_with('-') {
                 out.push('-');
@@ -36,6 +38,22 @@ pub fn slugify(name: &str) -> String {
     } else {
         cut.to_owned()
     }
+}
+
+/// Huruf Latin yang tidak terdekomposisi NFKD (setelah lowercase; `ẞ`/`Æ`/`Œ`/`Ø`/`Đ`/`Ł`/`Þ`/`Ð`
+/// sudah menjadi huruf kecilnya).
+fn transliterate(c: char) -> Option<&'static str> {
+    Some(match c {
+        'ß' => "ss",
+        'æ' => "ae",
+        'œ' => "oe",
+        'ø' => "o",
+        'đ' => "d",
+        'ł' => "l",
+        'þ' => "th",
+        'ð' => "d",
+        _ => return None,
+    })
 }
 
 /// Potong ke `max` byte (slug murni ASCII) lalu buang `-` di ujung.

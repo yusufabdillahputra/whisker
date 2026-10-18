@@ -122,7 +122,7 @@
     },
     {
       "name": "Straße",
-      "expected": "stra-e"
+      "expected": "strasse"
     },
     {
       "name": "a-----b!!!",
@@ -135,6 +135,70 @@
     {
       "name": "x                                        y",
       "expected": "x-y"
+    },
+    {
+      "name": "ẞ",
+      "expected": "ss"
+    },
+    {
+      "name": "Æther",
+      "expected": "aether"
+    },
+    {
+      "name": "æ",
+      "expected": "ae"
+    },
+    {
+      "name": "Œuvre",
+      "expected": "oeuvre"
+    },
+    {
+      "name": "cœur",
+      "expected": "coeur"
+    },
+    {
+      "name": "Øl",
+      "expected": "ol"
+    },
+    {
+      "name": "ø",
+      "expected": "o"
+    },
+    {
+      "name": "Đà Nẵng",
+      "expected": "da-nang"
+    },
+    {
+      "name": "đ",
+      "expected": "d"
+    },
+    {
+      "name": "Łódź",
+      "expected": "lodz"
+    },
+    {
+      "name": "ł",
+      "expected": "l"
+    },
+    {
+      "name": "Þór",
+      "expected": "thor"
+    },
+    {
+      "name": "þ",
+      "expected": "th"
+    },
+    {
+      "name": "Ðóra",
+      "expected": "dora"
+    },
+    {
+      "name": "ð",
+      "expected": "d"
+    },
+    {
+      "name": "Müller-Straße ÆØ",
+      "expected": "muller-strasse-aeo"
     }
   ],
   "candidate": [
