@@ -53,7 +53,7 @@ project_icons! {
     Lock => "lock", Key => "key", Wallet => "wallet", ShoppingCart => "shopping-cart",
     ChartLine => "chart-line", ChartPie => "chart-pie", Layers => "layers", Package => "package",
     Puzzle => "puzzle", Wrench => "wrench", Settings => "settings", Leaf => "leaf", Sun => "sun",
-    Moon => "moon", Coffee => "coffee", Cat => "cat",
+    Moon => "moon", Coffee => "coffee", Cat => "cat", Library => "library",
 }
 
 #[cfg(test)]
@@ -81,9 +81,9 @@ mod tests {
 
     #[test]
     fn icon_all_has_n_unique_entries() {
-        assert_eq!(ProjectIcon::ALL.len(), 60);
+        assert_eq!(ProjectIcon::ALL.len(), 61);
         let set: HashSet<_> = ProjectIcon::ALL.iter().map(|i| i.as_str()).collect();
-        assert_eq!(set.len(), 60);
+        assert_eq!(set.len(), 61);
     }
 
     #[test]
