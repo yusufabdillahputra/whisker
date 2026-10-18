@@ -50,7 +50,7 @@ fn role_str(role: Role) -> &'static str {
     }
 }
 
-fn parse_role(s: &str) -> Result<Role, CoreError> {
+pub(crate) fn parse_role(s: &str) -> Result<Role, CoreError> {
     match s {
         "admin" => Ok(Role::Admin),
         "member" => Ok(Role::Member),

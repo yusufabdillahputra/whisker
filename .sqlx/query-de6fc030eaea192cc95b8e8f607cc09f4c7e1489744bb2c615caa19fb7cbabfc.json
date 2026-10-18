@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE access_tokens SET revoked_at = COALESCE(revoked_at, now())\n         WHERE id = $1 AND user_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "de6fc030eaea192cc95b8e8f607cc09f4c7e1489744bb2c615caa19fb7cbabfc"
+}
