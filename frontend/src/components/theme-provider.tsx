@@ -7,6 +7,7 @@ import {
   resolveTheme,
   writeStoredPreference,
 } from "@/lib/theme";
+import { safeStorage } from "@/lib/safe-storage";
 
 const DARK_QUERY = "(prefers-color-scheme: dark)";
 
@@ -23,7 +24,7 @@ function systemPrefersDark(): boolean {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [preference, setPreferenceState] = useState<ThemePreference>(() => readStoredPreference(window.localStorage));
+  const [preference, setPreferenceState] = useState<ThemePreference>(() => readStoredPreference(safeStorage));
   const [systemDark, setSystemDark] = useState(systemPrefersDark);
 
   // Mode Sistem mengikuti perubahan preferensi perangkat secara langsung.
@@ -42,7 +43,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [resolved]);
 
   const setPreference = useCallback((pref: ThemePreference) => {
-    writeStoredPreference(window.localStorage, pref);
+    writeStoredPreference(safeStorage, pref);
     setPreferenceState(pref);
   }, []);
 

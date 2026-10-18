@@ -17,7 +17,7 @@ function fakeRouter() {
     visit(href, options) {
       visits.push({ href, options });
       // Kunjungan ulang memicu `before` seperti router Inertia asli.
-      emitBefore(href, options.method ?? "get", options.data ?? {});
+      emitBefore(href, options.method ?? "get", options.data ?? {}, options);
     },
   } as CsrfRecoveryRouter;
 
@@ -26,9 +26,9 @@ function fakeRouter() {
     for (const cb of listeners.get(type) ?? []) cb(event);
     return event;
   }
-  function emitBefore(href: string, method: string, data: unknown) {
+  function emitBefore(href: string, method: string, data: unknown, extra: Record<string, unknown> = {}) {
     return emit("before", {
-      visit: { url: new URL(href, "http://127.0.0.1:8080"), method, data, headers: {} },
+      visit: { headers: {}, ...extra, url: new URL(href, "http://127.0.0.1:8080"), method, data },
     });
   }
   const httpException = (status: number) => emit("httpException", { response: { status } });
@@ -55,6 +55,61 @@ describe("installCsrfRecovery", () => {
       preserveScroll: true,
     });
     expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("kunjungan ulang membawa method, data, opsi, dan callback asli (form tetap konsisten)", () => {
+    const f = fakeRouter();
+    installCsrfRecovery(f.router, { reload: vi.fn() });
+    const onSuccess = vi.fn();
+    const onError = vi.fn();
+    const onFinish = vi.fn();
+    const onStart = vi.fn();
+
+    // Bentuk `PendingVisit` Inertia: opsi visit + callback + field internal.
+    f.emitBefore(
+      "/account/security/password",
+      "put",
+      { currentPassword: "lama", password: "baru-panjang-12", passwordConfirmation: "baru-panjang-12" },
+      {
+        id: "visit-1",
+        completed: false,
+        cancelled: false,
+        interrupted: false,
+        headers: { "X-Custom": "1" },
+        preserveState: "errors",
+        preserveScroll: false,
+        replace: false,
+        only: [],
+        errorBag: "",
+        forceFormData: false,
+        onSuccess,
+        onError,
+        onFinish,
+        onStart,
+      },
+    );
+    f.httpException(419);
+
+    expect(f.visits).toHaveLength(1);
+    const { href, options } = f.visits[0];
+    expect(href).toBe("http://127.0.0.1:8080/account/security/password");
+    expect(options).toMatchObject({
+      method: "put",
+      data: { currentPassword: "lama", password: "baru-panjang-12", passwordConfirmation: "baru-panjang-12" },
+      headers: { "X-Custom": "1" },
+      preserveState: "errors",
+      preserveScroll: false,
+      replace: false,
+      only: [],
+    });
+    expect(options.onSuccess).toBe(onSuccess);
+    expect(options.onError).toBe(onError);
+    expect(options.onFinish).toBe(onFinish);
+    expect(options.onStart).toBe(onStart);
+    // Field internal kunjungan lama tidak ikut (Inertia membuat id/status baru).
+    for (const key of ["id", "url", "completed", "cancelled", "interrupted"]) {
+      expect(options, key).not.toHaveProperty(key);
+    }
   });
 
   it("419 lagi pada request ulang: tanpa ulang kedua, modal tetap dicegah, satu reload", () => {

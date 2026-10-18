@@ -3,30 +3,24 @@
 // "CSRF token mismatch". Respons 419 itu sekaligus menerbitkan cookie baru, jadi request diulang
 // tepat sekali (klien HTTP Inertia membaca ulang cookie saat mengirim). Bila ulangan juga 419, modal
 // tetap dicegah dan halaman di-reload sekali (GET tidak dicek CSRF, jadi tak bisa berulang).
+//
+// Kunjungan ulang membawa **seluruh** opsi + callback kunjungan asli (`onSuccess`, `onError`,
+// `onFinish`, `preserveState`, header, …; review Task 11): event `before` Inertia membawa
+// `PendingVisit` yang memuat semua opsi `router.visit`/`useForm`, termasuk callback. Hanya field
+// internal (`id`, `url`, status) yang dibuang — Inertia membuat yang baru.
 import type { router } from "@inertiajs/react";
 
-type InertiaVisitOptions = NonNullable<Parameters<typeof router.visit>[1]>;
-type Method = NonNullable<InertiaVisitOptions["method"]>;
-type RequestPayload = NonNullable<InertiaVisitOptions["data"]>;
+/** Opsi `router.visit` (termasuk callback `useForm`). */
+export type RetryVisitOptions = NonNullable<Parameters<typeof router.visit>[1]>;
 
-export interface VisitSnapshot {
+/** Isi `event.detail.visit` pada event `before` (`PendingVisit` Inertia). */
+export type VisitSnapshot = RetryVisitOptions & {
   url: URL;
-  method: Method;
-  data: RequestPayload;
-  headers: Record<string, string>;
-  errorBag?: string | null;
-  forceFormData?: boolean;
-}
-
-export interface RetryVisitOptions {
-  method?: Method;
-  data?: RequestPayload;
-  headers?: Record<string, string>;
-  errorBag?: string | null;
-  forceFormData?: boolean;
-  preserveState?: boolean;
-  preserveScroll?: boolean;
-}
+  id?: string;
+  completed?: boolean;
+  cancelled?: boolean;
+  interrupted?: boolean;
+};
 
 /** Subset router Inertia yang dipakai (memudahkan tes unit). */
 export interface CsrfRecoveryRouter {
@@ -59,17 +53,10 @@ export function installCsrfRecovery(
       reload();
       return;
     }
-    const { visit } = last;
+    const { url, id: _id, completed: _done, cancelled: _cancelled, interrupted: _interrupted, ...options } = last.visit;
     retryStarting = true;
-    router.visit(visit.url.href, {
-      method: visit.method,
-      data: visit.data,
-      headers: visit.headers,
-      errorBag: visit.errorBag,
-      forceFormData: visit.forceFormData,
-      preserveState: true,
-      preserveScroll: true,
-    });
+    // Default lama (Task 11) hanya bila kunjungan asli tidak menyebutnya; Inertia selalu mengisinya.
+    router.visit(url.href, { preserveState: true, preserveScroll: true, ...options });
   });
 
   return () => {
