@@ -11,7 +11,7 @@ use whisker_core::auth::password::{check_password_policy, hash_password_blocking
 use whisker_core::error::CoreError;
 use whisker_core::user::{NewUser, Role, count_users, create_user};
 
-use crate::config::{BootstrapEnv, is_placeholder};
+use crate::config::{BootstrapEnv, is_placeholder, is_whole_placeholder};
 
 /// Kunci advisory lock bootstrap (ASCII "WHKBOOT1"); berbeda dari kunci migration sqlx.
 const BOOTSTRAP_LOCK_KEY: i64 = 0x5748_4B42_4F4F_5431;
@@ -92,7 +92,7 @@ pub async fn bootstrap_admin(
         let (Some(email), Some(password)) = (env.email.as_deref(), env.password.as_deref()) else {
             return Err(BootstrapError::MissingAdminEnv);
         };
-        if is_placeholder(email) || is_placeholder(password) {
+        if is_placeholder(email) || is_whole_placeholder(password) {
             return Err(BootstrapError::MissingAdminEnv);
         }
         check_password_policy(password).map_err(|_| BootstrapError::WeakPassword)?;

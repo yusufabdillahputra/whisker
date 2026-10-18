@@ -58,6 +58,13 @@ pub fn is_placeholder(value: &str) -> bool {
     value.contains('<') || value.contains('>')
 }
 
+/// Placeholder untuk nilai rahasia (password): hanya bila seluruh nilai (ter-trim) berbentuk `<...>`.
+/// `<`/`>` di tengah password sah — kebijakan password tanpa aturan komposisi.
+pub fn is_whole_placeholder(value: &str) -> bool {
+    let v = value.trim();
+    v.starts_with('<') && v.ends_with('>')
+}
+
 /// Nilai env ter-trim; kosong dianggap absen.
 fn optional(env: &impl EnvSource, name: &'static str) -> Option<String> {
     env.get(name)
@@ -238,6 +245,12 @@ mod tests {
         assert!(matches!(err, ConfigError::Placeholder("DATABASE_URL")));
         assert!(err.to_string().contains("DATABASE_URL"));
         assert!(is_placeholder("a<b") && is_placeholder("a>b") && !is_placeholder("ab"));
+        // Rahasia (password): hanya bentuk utuh `<...>` yang placeholder.
+        assert!(is_whole_placeholder("<isi-password-admin>"));
+        assert!(is_whole_placeholder("  <isi>  "));
+        assert!(!is_whole_placeholder("ab<cd>ef1234xyz"));
+        assert!(!is_whole_placeholder("<awal-saja"));
+        assert!(!is_whole_placeholder("akhir-saja>"));
     }
 
     #[test]

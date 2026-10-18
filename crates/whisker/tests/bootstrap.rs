@@ -153,3 +153,31 @@ async fn weak_bootstrap_password_rejected(pool: PgPool) {
     );
     assert_eq!(count_users(&pool).await.unwrap(), 0);
 }
+
+/// Fix round 1: `<`/`>` di tengah password sah (tanpa aturan komposisi); hanya bentuk utuh `<...>`
+/// yang dianggap placeholder.
+#[sqlx::test(migrator = "whisker::startup::MIGRATOR")]
+async fn password_with_angle_brackets_accepted_whole_placeholder_rejected(pool: PgPool) {
+    let err = bootstrap_admin(
+        &pool,
+        &env(Some("admin@example.com"), Some("<isi-password-admin>")),
+    )
+    .await
+    .unwrap_err();
+    assert!(matches!(err, BootstrapError::MissingAdminEnv), "{err:?}");
+    assert_eq!(count_users(&pool).await.unwrap(), 0);
+
+    let pw = "ab<cd>ef1234xyz";
+    let out = bootstrap_admin(&pool, &env(Some("admin@example.com"), Some(pw)))
+        .await
+        .unwrap();
+    assert!(
+        matches!(out, BootstrapOutcome::CreatedAdmin { .. }),
+        "{out:?}"
+    );
+    let rec = find_auth_by_email(&pool, "admin@example.com")
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(verify_password_blocking(pw.to_owned(), Some(rec.password_hash)).await);
+}
