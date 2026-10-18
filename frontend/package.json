@@ -4,12 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/generate-avatars.mts",
     "dev": "vite",
+    "prebuild": "node scripts/generate-avatars.mts",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
+    "@dicebear/core": "10.7.0",
+    "@dicebear/styles": "10.6.0",
     "@fontsource/figtree": "5.3.0",
     "@fontsource/sora": "5.3.0",
     "@inertiajs/react": "3.9.1",

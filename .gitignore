@@ -33,3 +33,6 @@ dist/
 
 # Claude Code — setting lokal per-mesin
 .claude/settings.local.json
+
+# Avatar 40 SVG dibuat saat build (frontend/scripts/generate-avatars.mts)
+/frontend/public/avatars/
