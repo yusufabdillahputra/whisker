@@ -41,6 +41,8 @@ fn assert_security_page(r: &Resp, status: StatusCode, forced: bool) -> Value {
     let page = r.json();
     assert_eq!(page["component"], "Account/Security");
     assert_eq!(page["props"]["forced"], forced);
+    // URL page = page GET tempat form berada, juga untuk 422/429 dari PUT (pre-review fix).
+    assert_eq!(page["url"], "/account/security");
     page
 }
 
@@ -102,6 +104,41 @@ async fn wrong_current_422_field_currentPassword(pool: PgPool) {
         other.login("ani@example.com", PASSWORD).await.status,
         StatusCode::SEE_OTHER
     );
+}
+
+/// Pre-review fix: 422 dari `PUT /account/security/password` melaporkan `url` page Keamanan,
+/// bukan path request (browser tak boleh mendarat di `/account/security/password`).
+#[sqlx::test(migrations = "../../migrations")]
+async fn validation_422_reports_security_page_url(pool: PgPool) {
+    for forced in [false, true] {
+        let email = if forced {
+            "wajib@example.com"
+        } else {
+            "ani@example.com"
+        };
+        let mut c = logged_in(&pool, email, forced).await;
+        let r = c
+            .put(PASSWORD_PATH, change(PASSWORD, "pendek", "pendek"))
+            .await;
+        assert_eq!(r.status, StatusCode::UNPROCESSABLE_ENTITY, "{}", r.text());
+        let page = r.json();
+        assert_eq!(page["url"], "/account/security", "forced={forced}");
+        assert_eq!(page["component"], "Account/Security");
+        assert_eq!(
+            page["props"]["errors"]["password"],
+            "Password minimal 12 karakter"
+        );
+        let len: usize = r.headers["content-length"]
+            .to_str()
+            .unwrap()
+            .parse()
+            .unwrap();
+        assert_eq!(
+            len,
+            r.body.len(),
+            "Content-Length sesuai body yang ditulis ulang"
+        );
+    }
 }
 
 #[sqlx::test(migrations = "../../migrations")]

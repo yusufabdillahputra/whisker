@@ -89,6 +89,7 @@ pub async fn update_password(
             errors.add(CURRENT_PASSWORD_FIELD, LOGIN_THROTTLED);
             return render_errors_status(
                 ctx,
+                Some(SECURITY_PATH),
                 StatusCode::TOO_MANY_REQUESTS,
                 SECURITY_PAGE,
                 props,
@@ -115,7 +116,7 @@ pub async fn update_password(
             } else {
                 attempt.abandon();
             }
-            render_validation(ctx, SECURITY_PAGE, props, errors)
+            render_validation(ctx, Some(SECURITY_PATH), SECURITY_PAGE, props, errors)
         }
         // User dinonaktifkan bersamaan: sesi tak lagi berlaku.
         Err(CoreError::NotFound) => {

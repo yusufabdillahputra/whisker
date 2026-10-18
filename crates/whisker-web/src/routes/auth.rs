@@ -153,7 +153,7 @@ pub async fn logout(
 fn form_error(ctx: InertiaCtx, status: StatusCode, message: &'static str) -> Response {
     let mut errors = ValidationErrors::new();
     errors.add("email", message);
-    render_errors_status(ctx, status, LOGIN_PAGE, LoginPageProps {}, errors)
+    render_errors_status(ctx, None, status, LOGIN_PAGE, LoginPageProps {}, errors)
 }
 
 /// Detik dibulatkan ke atas, minimal 1.

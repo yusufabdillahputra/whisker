@@ -37,10 +37,7 @@ export default function Security({ forced, errors = {} }: Props) {
       // sendirinya. Error dibaca dari props page, bukan `form.errors`.
       preserveState: "errors",
       preserveScroll: true,
-      // Respons 422 membawa `url` = path request (`/account/security/password`), bukan path page;
-      // pertahankan URL Keamanan. Saat `forced`, sukses berpindah ke `/` sehingga URL tak boleh
-      // dipertahankan (bila 422, reload GET path itu dialihkan guard kembali ke Keamanan).
-      preserveUrl: !forced,
+      // URL page 422/429 = `/account/security` dari server (`render_validation` + `page_url`).
       onSuccess: () => {
         toast.success("Password berhasil diganti.");
       },
