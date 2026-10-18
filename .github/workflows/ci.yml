@@ -117,11 +117,12 @@ jobs:
           --health-timeout 5s
           --health-retries 30
     env:
-      # Nilai non-rahasia; biner menjalankan migration saat startup ke service di atas.
-      DATABASE_URL: postgres://whisker:ci@127.0.0.1:5432/db-whisker
-      WHISKER_PUBLIC_URL: http://127.0.0.1:8080
-      WHISKER_HTTP_ADDR: 127.0.0.1:8080
+      # Nilai non-rahasia. Playwright `webServer` menyalakan binary release dengan
+      # DATABASE_URL = E2E_DATABASE_URL (migration jalan saat startup ke service di atas);
+      # fixture seed/cleanup memakai DB yang sama.
       E2E_BASE_URL: http://127.0.0.1:8080
+      E2E_DATABASE_URL: postgres://whisker:ci@127.0.0.1:5432/db-whisker
+      E2E_USER_PASSWORD: ci-e2e-user-password
       # DB CI kosong: bootstrap admin (Task 06) gagal cepat tanpa env ini (K5). Nilai uji non-rahasia.
       WHISKER_ADMIN_EMAIL: e2e-admin@example.com
       WHISKER_ADMIN_PASSWORD: ci-e2e-admin-password
@@ -148,27 +149,13 @@ jobs:
       - name: Pasang Chromium
         working-directory: test/playwright
         run: npx playwright install --with-deps chromium
-      - name: Tulis .e2e.env
-        run: echo "E2E_BASE_URL=${E2E_BASE_URL}" > test/playwright/.e2e.env
-      - name: Jalankan monolith di background
-        run: |
-          ./target/release/whisker > whisker.log 2>&1 &
-          echo $! > whisker.pid
-          for i in $(seq 1 60); do
-            if ./target/release/whisker healthcheck 2>/dev/null; then echo "/health sehat"; exit 0; fi
-            sleep 1
-          done
-          echo "monolith tidak sehat dalam 60 detik"; cat whisker.log; exit 1
-      # TODO(Task 11): kembalikan ke `npx playwright test` penuh. Sejak Task 10 `GET /` adalah
-      # `Projects/Index` di balik login (ruling K3), jadi 3 tes smoke yang membuka `/` (page
-      # `Spike/Ping`) merah sampai Task 11 menulis ulang smoke.spec.ts; hanya tes `/spike/forbidden`
-      # yang masih sahih.
+      - name: Typecheck + tes unit fixture E2E (node --test)
+        working-directory: test/playwright
+        run: npm run typecheck && npm run test:unit
+      # `webServer` di playwright.config.ts menyalakan ../../target/release/whisker (log ikut output).
       - name: Jalankan Playwright
         working-directory: test/playwright
-        run: npx playwright test --grep "berstatus 403"
-      - name: Log monolith (saat gagal)
-        if: failure()
-        run: cat whisker.log || true
+        run: npx playwright test
       - name: Unggah laporan Playwright (saat gagal)
         if: failure()
         uses: actions/upload-artifact@v7.0.2
