@@ -14,3 +14,10 @@ subtle.workspace = true
 getrandom.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
+serde.workspace = true
+ts-rs.workspace = true
+unicode-normalization.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

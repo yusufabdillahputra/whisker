@@ -1,0 +1,192 @@
+{
+  "slugify": [
+    {
+      "name": "Catatan Kerja",
+      "expected": "catatan-kerja"
+    },
+    {
+      "name": "  Whisker  ",
+      "expected": "whisker"
+    },
+    {
+      "name": "Café Ünïcode",
+      "expected": "cafe-unicode"
+    },
+    {
+      "name": "a--b",
+      "expected": "a-b"
+    },
+    {
+      "name": "-Lead",
+      "expected": "lead"
+    },
+    {
+      "name": "日本語",
+      "expected": "project"
+    },
+    {
+      "name": "!!!",
+      "expected": "project"
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "name": "",
+      "expected": "project"
+    },
+    {
+      "name": "   ",
+      "expected": "project"
+    },
+    {
+      "name": "-_-",
+      "expected": "project"
+    },
+    {
+      "name": "Trailing---",
+      "expected": "trailing"
+    },
+    {
+      "name": "UPPER CASE",
+      "expected": "upper-case"
+    },
+    {
+      "name": "snake_case_name",
+      "expected": "snake-case-name"
+    },
+    {
+      "name": "a   b",
+      "expected": "a-b"
+    },
+    {
+      "name": "Rencana 2026: Q1/Q2",
+      "expected": "rencana-2026-q1-q2"
+    },
+    {
+      "name": "Ångström",
+      "expected": "angstrom"
+    },
+    {
+      "name": "ｆｕｌｌｗｉｄｔｈ",
+      "expected": "fullwidth"
+    },
+    {
+      "name": "ﬁle",
+      "expected": "file"
+    },
+    {
+      "name": "Naïve – résumé",
+      "expected": "naive-resume"
+    },
+    {
+      "name": "日本語 note",
+      "expected": "note"
+    },
+    {
+      "name": "emoji 🚀 launch",
+      "expected": "emoji-launch"
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa b",
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "name": "İstanbul",
+      "expected": "istanbul"
+    },
+    {
+      "name": "Ünï-Çödé",
+      "expected": "uni-code"
+    },
+    {
+      "name": "123",
+      "expected": "123"
+    },
+    {
+      "name": "한국어 abc",
+      "expected": "abc"
+    },
+    {
+      "name": "tab\tnewline\nx",
+      "expected": "tab-newline-x"
+    },
+    {
+      "name": "Straße",
+      "expected": "stra-e"
+    },
+    {
+      "name": "a-----b!!!",
+      "expected": "a-b"
+    },
+    {
+      "name": "(Draft) v1.2",
+      "expected": "draft-v1-2"
+    },
+    {
+      "name": "x                                        y",
+      "expected": "x-y"
+    }
+  ],
+  "candidate": [
+    {
+      "base": "catatan-kerja",
+      "attempt": 1,
+      "expected": "catatan-kerja"
+    },
+    {
+      "base": "catatan-kerja",
+      "attempt": 2,
+      "expected": "catatan-kerja-2"
+    },
+    {
+      "base": "catatan-kerja",
+      "attempt": 10,
+      "expected": "catatan-kerja-10"
+    },
+    {
+      "base": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "attempt": 1,
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "base": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "attempt": 2,
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-2"
+    },
+    {
+      "base": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "attempt": 10,
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-10"
+    },
+    {
+      "base": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-b",
+      "attempt": 2,
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-2"
+    },
+    {
+      "base": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-bb",
+      "attempt": 2,
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-2"
+    },
+    {
+      "base": "a",
+      "attempt": 3,
+      "expected": "a-3"
+    },
+    {
+      "base": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "attempt": 99,
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-99"
+    }
+  ]
+}

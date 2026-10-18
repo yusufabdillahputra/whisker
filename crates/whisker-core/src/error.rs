@@ -87,3 +87,17 @@ mod tests {
         assert_eq!(map["projectName"], "sudah dipakai");
     }
 }
+
+/// Nilai string di luar allowlist saat `FromStr` (ikon project, kunci avatar).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ParseValueError {
+    pub kind: &'static str,
+}
+
+impl std::fmt::Display for ParseValueError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} tidak ada di allowlist", self.kind)
+    }
+}
+
+impl std::error::Error for ParseValueError {}
