@@ -19,7 +19,11 @@ pub enum AvatarGroup {
     Animal,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+// `JsonSchema`: dipakai langsung di output tool MCP `whoami` (ruling K13). Komentar biasa agar
+// tidak ikut ke TS hasil ts-rs.
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS, schemars::JsonSchema,
+)]
 #[ts(export)]
 #[serde(rename_all = "lowercase")]
 pub enum Role {

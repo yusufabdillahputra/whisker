@@ -41,3 +41,10 @@ uuid = "=1.28.0"
 
 # Task 06: kolom timestamptz repositori user (asumsi Q23: crate `time`).
 time = "=0.3.55"
+
+# Task 09: endpoint MCP stateless (ADR-011). Fitur klien hanya di dev-dependencies whisker-mcp.
+rmcp = { version = "=3.5.1", default-features = false, features = ["server", "macros", "transport-streamable-http-server"] }
+schemars = { version = "=1.2.3", features = ["uuid1"] }
+http = "=1.5.0"
+# Klien HTTP mentah untuk tes kontrak `/mcp` (versi sama dengan yang ditarik rmcp).
+reqwest = { version = "=0.13.5", default-features = false, features = ["json"] }

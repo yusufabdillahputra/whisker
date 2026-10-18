@@ -5,7 +5,7 @@ use clap::Parser;
 use std::process::ExitCode;
 use std::time::Duration;
 use tracing_subscriber::EnvFilter;
-use whisker::app::{build_app, inertia_config};
+use whisker::app::{build_app, inertia_config, mcp_config};
 use whisker::bootstrap::bootstrap_admin;
 use whisker::cli::{Cli, Command};
 use whisker::config::{Config, ProcessEnv, http_addr_from_env};
@@ -55,7 +55,8 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
 
     let cfg = inertia_config(config.vite_dev_server.as_deref())?;
     let web = whisker_web::spike::router(cfg, csrf_secret, config.cookie_secure);
-    let app = build_app(web, health_router(pool));
+    let mcp = whisker_mcp::mcp_router(pool.clone(), mcp_config(&config.public_url));
+    let app = build_app(web, health_router(pool).merge(mcp));
 
     let listener = tokio::net::TcpListener::bind(config.http_addr).await?;
     tracing::info!(config = ?config, "whisker listening");

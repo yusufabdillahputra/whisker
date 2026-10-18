@@ -3,9 +3,11 @@
 use axum::Router;
 use rust_embed::RustEmbed;
 use std::fmt;
+use url::Url;
 use veer::{
     EmbeddedAssets, InertiaConfig, RootView, RootViewContext, ViteManifestError, ViteRootView,
 };
+use whisker_mcp::McpConfig;
 
 /// Hasil `vite build` (`frontend/dist`), di-embed ke binary (fitur `debug-embed`: juga di debug build).
 #[derive(RustEmbed)]
@@ -82,4 +84,12 @@ pub fn inertia_config(vite_dev_server: Option<&str>) -> Result<InertiaConfig, Ap
 pub fn build_app(web: Router, extra: Router) -> Router {
     let assets = EmbeddedAssets::new(|path| Dist::get(&format!("build/{path}")).map(|f| f.data));
     web.merge(extra).nest_service("/build", assets)
+}
+
+/// Konfigurasi `/mcp`: origin yang diizinkan = origin `WHISKER_PUBLIC_URL` (keputusan owner Q9).
+pub fn mcp_config(public_url: &Url) -> McpConfig {
+    let origin = public_url.origin();
+    McpConfig {
+        allowed_origin: origin.is_tuple().then(|| origin.ascii_serialization()),
+    }
 }
