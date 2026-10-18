@@ -48,10 +48,10 @@ async fn must_change_user_post_elsewhere_redirected(pool: PgPool) {
 #[sqlx::test(migrations = "../../migrations")]
 async fn must_change_user_can_open_security(pool: PgPool) {
     let mut c = must_change_client(&pool).await;
-    // Lolos guard; halaman keamanan baru ada di Task 13, jadi kini jatuh ke fallback 404.
+    // Lolos guard → page `Account/Security` (Task 13).
     let r = c.get("/account/security").await;
-    assert_eq!(r.status, StatusCode::NOT_FOUND);
-    assert_eq!(r.json()["component"], "Errors/NotFound");
+    assert_eq!(r.status, StatusCode::OK);
+    assert_eq!(r.json()["component"], "Account/Security");
     let r = c
         .send(
             Method::PUT,

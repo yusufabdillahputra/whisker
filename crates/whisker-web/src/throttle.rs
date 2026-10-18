@@ -1,5 +1,6 @@
 //! Throttle login in-memory per proses (A2): `max_failures` kegagalan dalam `window` per email
-//! **dan** per IP → `429`. Jendela bergeser; hanya kegagalan yang dicatat.
+//! **dan** per IP → `429`. Jendela bergeser; hanya kegagalan yang dicatat. Kunci
+//! [`ThrottleKey::account`] (tanpa IP) dipakai ganti password: per user saja (Task 13).
 //!
 //! Login memakai reservasi atomik [`LoginThrottle::try_begin`]: percobaan yang sedang berjalan
 //! (belum selesai verifikasi Argon2) dihitung sebagai kegagalan sementara di bawah mutex yang sama,
@@ -10,18 +11,29 @@ use std::net::IpAddr;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-/// Kunci throttle. `email` sudah trim + lowercase (pakai [`ThrottleKey::new`]).
+/// Kunci throttle. `email` sudah trim + lowercase (pakai [`ThrottleKey::new`]); `ip = None` =
+/// tanpa dimensi IP.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ThrottleKey {
     pub email: String,
-    pub ip: IpAddr,
+    pub ip: Option<IpAddr>,
 }
 
 impl ThrottleKey {
+    /// Kunci login: per email **dan** per IP.
     pub fn new(email: &str, ip: IpAddr) -> Self {
         Self {
             email: email.trim().to_lowercase(),
-            ip,
+            ip: Some(ip),
+        }
+    }
+
+    /// Kunci per akun (`user_id`) saja, tanpa dimensi IP. Pakai instance throttle terpisah dari
+    /// login agar ruang kunci tidak bercampur dengan email.
+    pub fn account(user_id: impl std::fmt::Display) -> Self {
+        Self {
+            email: user_id.to_string(),
+            ip: None,
         }
     }
 }
@@ -95,7 +107,9 @@ impl LoginThrottle {
             return Err(Limited { retry_after });
         }
         *state.in_flight_email.entry(key.email.clone()).or_default() += 1;
-        *state.in_flight_ip.entry(key.ip).or_default() += 1;
+        if let Some(ip) = key.ip {
+            *state.in_flight_ip.entry(ip).or_default() += 1;
+        }
         Ok(Attempt {
             throttle: Arc::clone(self),
             key: key.clone(),
@@ -109,11 +123,13 @@ impl LoginThrottle {
             state.in_flight_email.get(&key.email).copied().unwrap_or(0),
             now,
         );
-        let ip = self.retry_after(
-            state.by_ip.get(&key.ip),
-            state.in_flight_ip.get(&key.ip).copied().unwrap_or(0),
-            now,
-        );
+        let ip = key.ip.and_then(|ip| {
+            self.retry_after(
+                state.by_ip.get(&ip),
+                state.in_flight_ip.get(&ip).copied().unwrap_or(0),
+                now,
+            )
+        });
         email.into_iter().chain(ip).max()
     }
 
@@ -128,7 +144,9 @@ impl LoginThrottle {
             }
         }
         dec(&mut state.in_flight_email, &key.email);
-        dec(&mut state.in_flight_ip, &key.ip);
+        if let Some(ip) = key.ip {
+            dec(&mut state.in_flight_ip, &ip);
+        }
     }
 
     /// Catat satu kegagalan login untuk email dan IP pada `key`.
@@ -150,7 +168,9 @@ impl LoginThrottle {
             now,
             cap,
         );
-        push_capped(state.by_ip.entry(key.ip).or_default(), now, cap);
+        if let Some(ip) = key.ip {
+            push_capped(state.by_ip.entry(ip).or_default(), now, cap);
+        }
     }
 
     /// Buang semua kegagalan di luar jendela dan kunci yang kosong.
@@ -484,5 +504,19 @@ mod tests {
         assert!(limited(
             t.check(&ThrottleKey::new(" ani@EXAMPLE.com", ip(9)), now)
         ));
+    }
+
+    #[test]
+    fn account_key_limits_per_user_only() {
+        let t = shared();
+        let now = Instant::now();
+        let ani = ThrottleKey::account("01a14ee2-0000-7000-8000-000000000001");
+        let budi = ThrottleKey::account("01a14ee2-0000-7000-8000-000000000002");
+        for _ in 0..5 {
+            drop(t.try_begin(&ani, now).unwrap());
+        }
+        assert!(t.try_begin(&ani, now).is_err());
+        // Tanpa dimensi IP: user lain tidak ikut tertahan.
+        assert!(t.try_begin(&budi, now).is_ok());
     }
 }

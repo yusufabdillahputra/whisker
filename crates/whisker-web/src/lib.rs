@@ -53,15 +53,19 @@ pub struct AppState {
     pub pool: PgPool,
     pub config: Arc<WebConfig>,
     pub throttle: Arc<LoginThrottle>,
+    /// Throttle password saat ini salah di `PUT /account/security/password`, kunci per user
+    /// (`ThrottleKey::account`), batas sama dengan login.
+    pub password_throttle: Arc<LoginThrottle>,
 }
 
 impl AppState {
-    /// State dengan throttle standar (5 gagal / 15 menit).
+    /// State dengan throttle standar (5 gagal / 15 menit) untuk login dan ganti password.
     pub fn new(pool: PgPool, config: WebConfig) -> Self {
         Self {
             pool,
             config: Arc::new(config),
             throttle: Arc::new(LoginThrottle::standard()),
+            password_throttle: Arc::new(LoginThrottle::standard()),
         }
     }
 }

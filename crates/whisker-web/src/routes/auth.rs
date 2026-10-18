@@ -157,6 +157,6 @@ fn form_error(ctx: InertiaCtx, status: StatusCode, message: &'static str) -> Res
 }
 
 /// Detik dibulatkan ke atas, minimal 1.
-fn retry_after_secs(d: Duration) -> u64 {
+pub(crate) fn retry_after_secs(d: Duration) -> u64 {
     (d.as_secs() + u64::from(d.subsec_nanos() > 0)).max(1)
 }

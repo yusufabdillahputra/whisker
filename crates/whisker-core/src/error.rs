@@ -60,6 +60,11 @@ impl ValidationErrors {
         self.fields.is_empty()
     }
 
+    /// Ada error untuk `field`?
+    pub fn contains(&self, field: &str) -> bool {
+        self.fields.contains_key(field)
+    }
+
     pub fn into_map(self) -> BTreeMap<String, String> {
         self.fields
     }
@@ -85,6 +90,14 @@ mod tests {
         assert_eq!(map.len(), 2);
         assert_eq!(map["text"], "wajib diisi");
         assert_eq!(map["projectName"], "sudah dipakai");
+    }
+
+    #[test]
+    fn contains_reports_field_presence() {
+        let mut errors = ValidationErrors::new();
+        errors.add("currentPassword", "salah");
+        assert!(errors.contains("currentPassword"));
+        assert!(!errors.contains("password"));
     }
 }
 

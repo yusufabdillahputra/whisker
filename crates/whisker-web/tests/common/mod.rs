@@ -202,6 +202,10 @@ impl Client {
         self.send(Method::POST, uri, Some(json), true).await
     }
 
+    pub async fn put(&mut self, uri: &str, json: Value) -> Resp {
+        self.send(Method::PUT, uri, Some(json), true).await
+    }
+
     pub async fn login(&mut self, email: &str, password: &str) -> Resp {
         self.post(
             "/login",

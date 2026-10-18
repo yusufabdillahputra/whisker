@@ -14,6 +14,7 @@ use crate::session::CurrentSession;
 
 pub const LOGIN_PATH: &str = "/login";
 pub const SECURITY_PATH: &str = "/account/security";
+pub const PASSWORD_PATH: &str = "/account/security/password";
 
 /// Redirect: `302` untuk GET/HEAD, `303` untuk method lain (Inertia mengikuti dengan GET).
 pub fn redirect(method: &Method, to: &str) -> Response {
@@ -61,8 +62,9 @@ impl<S: Send + Sync> FromRequestParts<S> for RequireAdmin {
     }
 }
 
-/// Selama `must_change_password`, hanya `GET /account/security`, `PUT /account/security/password`,
-/// dan `POST /logout` yang lolos; selain itu → redirect `/account/security`.
+/// Selama `must_change_password`, hanya `GET`/`HEAD /account/security`,
+/// `PUT /account/security/password`, dan `POST /logout` yang lolos; selain itu → redirect
+/// `/account/security`.
 pub async fn must_change_password_guard(req: Request, next: Next) -> Response {
     let must_change = req
         .extensions()
@@ -77,8 +79,8 @@ pub async fn must_change_password_guard(req: Request, next: Next) -> Response {
 fn allowed_while_must_change(method: &Method, path: &str) -> bool {
     matches!(
         (method, path),
-        (&Method::GET, SECURITY_PATH)
-            | (&Method::PUT, "/account/security/password")
+        (&Method::GET | &Method::HEAD, SECURITY_PATH)
+            | (&Method::PUT, PASSWORD_PATH)
             | (&Method::POST, "/logout")
     )
 }
