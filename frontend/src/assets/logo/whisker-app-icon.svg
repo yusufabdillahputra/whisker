@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="112" height="112" viewBox="0 0 112 112" fill="none" role="img" aria-label="Ikon aplikasi Whisker">
+  <rect width="112" height="112" rx="26" fill="#14161B"/>
+  <svg x="20" y="21.5" width="72" height="69" viewBox="32 14 96 92" fill="none">
+    <path d="M52 98C44 98 40 90 40 80V42L56 22L68 38H92L104 22L120 42V80C120 90 116 98 108 98Z" stroke="#F4F5F7" stroke-width="7" stroke-linejoin="round"/>
+    <line x1="68" y1="58" x2="68" y2="66" stroke="#F4F5F7" stroke-width="7" stroke-linecap="round"/>
+    <line x1="92" y1="58" x2="92" y2="66" stroke="#F4F5F7" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="80" cy="78" r="5" fill="#FF7A45"/>
+    <line x1="70" y1="78" x2="51" y2="74" stroke="#F4F5F7" stroke-width="5" stroke-linecap="round"/>
+    <line x1="70" y1="85" x2="51" y2="88" stroke="#F4F5F7" stroke-width="5" stroke-linecap="round"/>
+    <line x1="90" y1="78" x2="109" y2="74" stroke="#F4F5F7" stroke-width="5" stroke-linecap="round"/>
+    <line x1="90" y1="85" x2="109" y2="88" stroke="#F4F5F7" stroke-width="5" stroke-linecap="round"/>
+  </svg>
+</svg>

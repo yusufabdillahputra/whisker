@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="510" height="115" viewBox="0 0 510 115" fill="none" role="img" aria-label="Whisker">
+  <svg x="0" y="0" width="120" height="115" viewBox="32 14 96 92" fill="none">
+    <path d="M52 98C44 98 40 90 40 80V42L56 22L68 38H92L104 22L120 42V80C120 90 116 98 108 98Z" stroke="#14161B" stroke-width="6" stroke-linejoin="round"/>
+    <line x1="68" y1="58" x2="68" y2="66" stroke="#14161B" stroke-width="6" stroke-linecap="round"/>
+    <line x1="92" y1="58" x2="92" y2="66" stroke="#14161B" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="80" cy="78" r="4.5" fill="#FF7A45"/>
+    <line x1="70" y1="78" x2="51" y2="74" stroke="#14161B" stroke-width="4" stroke-linecap="round"/>
+    <line x1="70" y1="85" x2="51" y2="88" stroke="#14161B" stroke-width="4" stroke-linecap="round"/>
+    <line x1="90" y1="78" x2="109" y2="74" stroke="#14161B" stroke-width="4" stroke-linecap="round"/>
+    <line x1="90" y1="85" x2="109" y2="88" stroke="#14161B" stroke-width="4" stroke-linecap="round"/>
+  </svg>
+  <!-- Wordmark memakai font Sora 600 (Google Fonts); tanpa font itu teks jatuh ke sans-serif. -->
+  <text x="144" y="88" fill="#14161B" font-family="Sora, 'Segoe UI', sans-serif" font-size="88" font-weight="600" letter-spacing="-2.64">whisker</text>
+</svg>
