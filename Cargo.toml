@@ -25,3 +25,5 @@ http-body-util = "=0.1.5"
 getrandom = "=0.4.3"
 tracing = "=0.1.44"
 tracing-subscriber = { version = "=0.3.23", features = ["env-filter"] }
+# ADR-007: driver + migration + tes integrasi. TLS rustls (Neon butuh sslmode=require).
+sqlx = { version = "=0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "macros", "migrate"] }

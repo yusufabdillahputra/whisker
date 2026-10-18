@@ -13,7 +13,7 @@ pub struct Cli {
 pub enum Command {
     /// Jalankan server (default bila tanpa subcommand).
     Serve,
-    /// Probe `/healthz` pada alamat HTTP sendiri; exit 0 bila sehat.
+    /// Probe `GET /health` pada alamat HTTP sendiri; exit 0 bila sehat.
     Healthcheck,
 }
 
