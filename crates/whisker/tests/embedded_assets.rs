@@ -105,3 +105,65 @@ async fn dev_mode_points_scripts_at_vite_dev_server() {
     );
     assert!(!html.contains(r#"src="/build/"#), "{html}");
 }
+
+#[tokio::test]
+async fn embedded_avatars_match_allowlist() {
+    let app = app();
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../frontend/dist/avatars");
+    let mut on_disk: Vec<String> = std::fs::read_dir(&dir)
+        .expect("dist/avatars ada")
+        .map(|e| e.unwrap().file_name().into_string().unwrap())
+        .collect();
+    on_disk.sort();
+    let mut expected: Vec<String> = whisker_core::user::AvatarKey::ALL
+        .iter()
+        .map(|k| format!("{}.svg", k.as_str()))
+        .collect();
+    expected.sort();
+    assert_eq!(expected.len(), 40);
+    assert_eq!(on_disk, expected);
+
+    for name in &expected {
+        let resp = get(&app, &format!("/avatars/{name}")).await;
+        assert_eq!(resp.status(), StatusCode::OK, "{name}");
+        assert!(body_string(resp).await.contains("<metadata"), "{name}");
+    }
+}
+
+#[tokio::test]
+async fn avatar_served_with_svg_content_type() {
+    let resp = get(&app(), "/avatars/human-f-01.svg").await;
+    assert_eq!(resp.status(), StatusCode::OK);
+    assert_eq!(resp.headers()[header::CONTENT_TYPE], "image/svg+xml");
+}
+
+#[tokio::test]
+async fn avatar_unknown_or_non_svg_is_404() {
+    let app = app();
+    for uri in [
+        "/avatars/tidak-ada.svg",
+        "/avatars/..%2FCargo.toml",
+        "/avatars/%2e%2e/index.html",
+        "/avatars/",
+        "/index.html",
+    ] {
+        assert_eq!(
+            get(&app, uri).await.status(),
+            StatusCode::NOT_FOUND,
+            "{uri}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn third_party_notices_served() {
+    let resp = get(&app(), "/third-party-notices.txt").await;
+    assert_eq!(resp.status(), StatusCode::OK);
+    assert!(
+        resp.headers()[header::CONTENT_TYPE]
+            .to_str()
+            .unwrap()
+            .starts_with("text/plain")
+    );
+    assert!(body_string(resp).await.contains("MIT"));
+}

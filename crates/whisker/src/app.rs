@@ -1,6 +1,10 @@
 //! Perakitan aplikasi: root view Inertia + aset frontend ter-embed.
 
 use axum::Router;
+use axum::extract::Path;
+use axum::http::{StatusCode, header};
+use axum::response::{IntoResponse, Response};
+use axum::routing::get;
 use rust_embed::RustEmbed;
 use sqlx::PgPool;
 use std::fmt;
@@ -116,11 +120,45 @@ pub fn inertia_config(vite_dev_server: Option<&str>) -> Result<InertiaConfig, Ap
     Ok(InertiaConfig::new().root_view(WhiskerRootView(view)))
 }
 
-/// Gabungkan router web + router lain (`extra`, mis. MCP) dan sajikan aset ter-embed di `/build/*`.
+/// Gabungkan router web + router lain (`extra`, mis. MCP) dan sajikan aset ter-embed di `/build/*`,
+/// plus berkas statis root dari `frontend/public` (`/avatars/{key}.svg`, `/third-party-notices.txt`).
 /// `CsrfLayer` dipasang oleh router web, bukan di sini.
 pub fn build_app(web: Router, extra: Router) -> Router {
     let assets = EmbeddedAssets::new(|path| Dist::get(&format!("build/{path}")).map(|f| f.data));
-    web.merge(extra).nest_service("/build", assets)
+    web.merge(extra)
+        .nest_service("/build", assets)
+        .route("/avatars/{file}", get(avatar_asset))
+        .route("/third-party-notices.txt", get(third_party_notices))
+}
+
+/// Sajikan `dist/avatars/{file}`: hanya satu segmen `*.svg` tanpa `/`/`\`/`..`; selain itu 404.
+async fn avatar_asset(Path(file): Path<String>) -> Response {
+    let safe = file.ends_with(".svg") && !file.contains(['/', '\\']) && !file.contains("..");
+    match safe
+        .then(|| Dist::get(&format!("avatars/{file}")))
+        .flatten()
+    {
+        Some(f) => static_response("image/svg+xml", f.data.into_owned()),
+        None => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
+async fn third_party_notices() -> Response {
+    match Dist::get("third-party-notices.txt") {
+        Some(f) => static_response("text/plain; charset=utf-8", f.data.into_owned()),
+        None => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
+fn static_response(content_type: &'static str, body: Vec<u8>) -> Response {
+    (
+        [
+            (header::CONTENT_TYPE, content_type),
+            (header::CACHE_CONTROL, "public, max-age=3600"),
+        ],
+        body,
+    )
+        .into_response()
 }
 
 /// Rakit app lengkap: router web (sesi, guard, CSRF), `/health`, `/mcp`, dan aset ter-embed.
