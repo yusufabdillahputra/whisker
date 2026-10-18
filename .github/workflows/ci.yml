@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN: "1.99.0"
+  NODE_VERSION: "24"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Pasang toolchain Rust
+        run: rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --component clippy,rustfmt --no-self-update && rustup default "$RUST_TOOLCHAIN"
+      - uses: Swatinem/rust-cache@v2.9.2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Pasang dependensi frontend
+        run: npm --prefix frontend ci
+      # build.rs crate whisker gagal bila frontend/dist tidak ada.
+      - name: Build frontend
+        run: npm --prefix frontend run build
+      - name: cargo fmt
+        run: cargo fmt --all --check
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Typecheck frontend
+        run: npm --prefix frontend run typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Pasang toolchain Rust
+        run: rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --no-self-update && rustup default "$RUST_TOOLCHAIN"
+      - uses: Swatinem/rust-cache@v2.9.2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Pasang dependensi frontend
+        run: npm --prefix frontend ci
+      - name: Build frontend
+        run: npm --prefix frontend run build
+      - name: cargo test
+        run: cargo test --workspace
+      # ts-rs menulis ulang type TS saat test; hasilnya harus identik dengan yang ter-commit.
+      - name: Type TS ter-generate tidak berubah
+        run: git diff --exit-code frontend/src/types/generated
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Nilai non-rahasia: DATABASE_URL dummy (belum ada koneksi DB sampai Task 03).
+      DATABASE_URL: postgres://whisker:ci@127.0.0.1:5432/db-whisker
+      WHISKER_PUBLIC_URL: http://127.0.0.1:8080
+      WHISKER_HTTP_ADDR: 127.0.0.1:8080
+      E2E_BASE_URL: http://127.0.0.1:8080
+    steps:
+      - uses: actions/checkout@v7
+      - name: Pasang toolchain Rust
+        run: rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --no-self-update && rustup default "$RUST_TOOLCHAIN"
+      - uses: Swatinem/rust-cache@v2.9.2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            test/playwright/package-lock.json
+      - name: Pasang dependensi frontend
+        run: npm --prefix frontend ci
+      - name: Build frontend
+        run: npm --prefix frontend run build
+      - name: Build binary release
+        run: cargo build --release -p whisker
+      - name: Pasang dependensi Playwright
+        run: npm --prefix test/playwright ci
+      - name: Pasang Chromium
+        working-directory: test/playwright
+        run: npx playwright install --with-deps chromium
+      - name: Tulis .e2e.env
+        run: echo "E2E_BASE_URL=${E2E_BASE_URL}" > test/playwright/.e2e.env
+      - name: Jalankan monolith di background
+        run: |
+          ./target/release/whisker > whisker.log 2>&1 &
+          echo $! > whisker.pid
+          for i in $(seq 1 60); do
+            if (echo > /dev/tcp/127.0.0.1/8080) 2>/dev/null; then echo "port 8080 siap"; exit 0; fi
+            sleep 1
+          done
+          echo "monolith tidak naik dalam 60 detik"; cat whisker.log; exit 1
+      - name: Jalankan Playwright
+        working-directory: test/playwright
+        run: npx playwright test
+      - name: Log monolith (saat gagal)
+        if: failure()
+        run: cat whisker.log || true
+      - name: Unggah laporan Playwright (saat gagal)
+        if: failure()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: playwright-report
+          path: |
+            test/playwright/playwright-report
+            test/playwright/test-results
+          retention-days: 3
+          if-no-files-found: ignore
