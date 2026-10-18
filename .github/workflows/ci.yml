@@ -16,6 +16,10 @@ env:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN: "1.99.0"
   NODE_VERSION: "24"
+  SQLX_CLI_VERSION: "0.9.0"
+  # Makro `query!` memakai metadata `.sqlx/` ter-commit, bukan DB saat compile (ADR-007).
+  # `cargo sqlx prepare --check` tetap memeriksa ke DB (ia menyetel SQLX_OFFLINE=false sendiri).
+  SQLX_OFFLINE: "true"
 
 jobs:
   lint:
@@ -46,6 +50,24 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        # Kredensial uji non-rahasia, hanya untuk service CI sekali pakai.
+        env:
+          POSTGRES_USER: whisker
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: db-whisker
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U whisker -d db-whisker"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      # `#[sqlx::test]` membuat database sementara per tes di server ini (user butuh CREATEDB).
+      DATABASE_URL: postgres://whisker:ci@127.0.0.1:5432/db-whisker
     steps:
       - uses: actions/checkout@v7
       - name: Pasang toolchain Rust
@@ -60,6 +82,14 @@ jobs:
         run: npm --prefix frontend ci
       - name: Build frontend
         run: npm --prefix frontend run build
+      # Biner ~/.cargo/bin ikut di-cache rust-cache; `cargo install` versi sama = no-op.
+      - name: Pasang sqlx-cli
+        run: cargo install sqlx-cli --version "$SQLX_CLI_VERSION" --locked --no-default-features --features postgres,rustls
+      # Query `.sqlx/` merujuk `_sqlx_migrations`, jadi DB uji harus sudah ter-migrate.
+      - name: Migrate DB uji
+        run: cargo sqlx migrate run --source migrations
+      - name: cargo sqlx prepare --check
+        run: cargo sqlx prepare --workspace --check
       - name: cargo test
         run: cargo test --workspace
       # ts-rs menulis ulang type TS saat test; hasilnya harus identik dengan yang ter-commit.
@@ -69,8 +99,23 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        # Kredensial uji non-rahasia, hanya untuk service CI sekali pakai.
+        env:
+          POSTGRES_USER: whisker
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: db-whisker
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U whisker -d db-whisker"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
     env:
-      # Nilai non-rahasia: DATABASE_URL dummy (belum ada koneksi DB sampai Task 03).
+      # Nilai non-rahasia; biner menjalankan migration saat startup ke service di atas.
       DATABASE_URL: postgres://whisker:ci@127.0.0.1:5432/db-whisker
       WHISKER_PUBLIC_URL: http://127.0.0.1:8080
       WHISKER_HTTP_ADDR: 127.0.0.1:8080
@@ -105,10 +150,10 @@ jobs:
           ./target/release/whisker > whisker.log 2>&1 &
           echo $! > whisker.pid
           for i in $(seq 1 60); do
-            if (echo > /dev/tcp/127.0.0.1/8080) 2>/dev/null; then echo "port 8080 siap"; exit 0; fi
+            if ./target/release/whisker healthcheck 2>/dev/null; then echo "/health sehat"; exit 0; fi
             sleep 1
           done
-          echo "monolith tidak naik dalam 60 detik"; cat whisker.log; exit 1
+          echo "monolith tidak sehat dalam 60 detik"; cat whisker.log; exit 1
       - name: Jalankan Playwright
         working-directory: test/playwright
         run: npx playwright test
