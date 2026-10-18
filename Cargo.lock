@@ -2701,12 +2701,18 @@ name = "whisker-web"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "cookie",
  "http-body-util",
+ "ipnet",
  "serde",
  "serde_json",
+ "sqlx",
+ "time",
  "tokio",
  "tower",
+ "tracing",
  "ts-rs",
+ "url",
  "veer",
  "whisker-core",
 ]

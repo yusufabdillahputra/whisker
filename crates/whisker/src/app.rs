@@ -2,12 +2,19 @@
 
 use axum::Router;
 use rust_embed::RustEmbed;
+use sqlx::PgPool;
 use std::fmt;
+use std::net::SocketAddr;
+use tokio::net::TcpListener;
 use url::Url;
 use veer::{
     EmbeddedAssets, InertiaConfig, RootView, RootViewContext, ViteManifestError, ViteRootView,
 };
 use whisker_mcp::McpConfig;
+
+use crate::config::Config;
+use crate::health::health_router;
+use whisker_web::{AppState, WebConfig, web_router};
 
 /// Hasil `vite build` (`frontend/dist`), di-embed ke binary (fitur `debug-embed`: juga di debug build).
 #[derive(RustEmbed)]
@@ -84,6 +91,48 @@ pub fn inertia_config(vite_dev_server: Option<&str>) -> Result<InertiaConfig, Ap
 pub fn build_app(web: Router, extra: Router) -> Router {
     let assets = EmbeddedAssets::new(|path| Dist::get(&format!("build/{path}")).map(|f| f.data));
     web.merge(extra).nest_service("/build", assets)
+}
+
+/// Rakit app lengkap: router web (sesi, guard, CSRF), router spike tersisa, `/health`, `/mcp`,
+/// dan aset ter-embed.
+///
+/// `csrf_secret` (≥ 32 byte) dipakai bersama router web dan spike agar cookie `XSRF-TOKEN` sama.
+pub fn compose_app(
+    pool: PgPool,
+    config: &Config,
+    csrf_secret: Vec<u8>,
+) -> Result<Router, AppError> {
+    let inertia = inertia_config(config.vite_dev_server.as_deref())?;
+    let spike =
+        whisker_web::spike::router(inertia.clone(), csrf_secret.clone(), config.cookie_secure);
+    let state = AppState::new(pool.clone(), web_config(config, csrf_secret));
+    let web = web_router(state, inertia).merge(spike);
+    let mcp = whisker_mcp::mcp_router(pool.clone(), mcp_config(&config.public_url));
+    Ok(build_app(web, health_router(pool).merge(mcp)))
+}
+
+/// `Config` → `WebConfig`.
+pub fn web_config(config: &Config, csrf_secret: Vec<u8>) -> WebConfig {
+    WebConfig {
+        cookie_secure: config.cookie_secure,
+        public_url: config.public_url.clone(),
+        trusted_proxies: config.trusted_proxies.clone(),
+        csrf_secret,
+    }
+}
+
+/// Sajikan `app` di `listener` sampai `shutdown` selesai. `ConnectInfo<SocketAddr>` dipasang
+/// (peer TCP) untuk IP klien throttle login.
+pub async fn serve<F>(listener: TcpListener, app: Router, shutdown: F) -> std::io::Result<()>
+where
+    F: Future<Output = ()> + Send + 'static,
+{
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown)
+    .await
 }
 
 /// Konfigurasi `/mcp`: origin yang diizinkan = origin `WHISKER_PUBLIC_URL` (keputusan owner Q9).

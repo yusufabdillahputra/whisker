@@ -1,4 +1,5 @@
-//! Rute spike sementara (Task 01, ADR-001) — dihapus di Task 11.
+//! Rute spike sementara (Task 01, ADR-001) — dihapus di Task 11. `GET /` sudah diganti
+//! `Projects/Index` di `web_router` (Task 10, ruling K3); sisa rute di router terpisah tanpa guard.
 
 use crate::page::{InertiaCtx, render_page, render_page_status, render_validation};
 use axum::Router;
@@ -27,22 +28,15 @@ pub struct EchoForm {
     pub text: String,
 }
 
-/// Router spike lengkap: rute + `InertiaLayer` + `CsrfLayer` (paling luar).
-/// `csrf_secret` minimal 32 byte; `secure_cookie = false` hanya untuk HTTP lokal.
+/// Router spike: rute + `InertiaLayer` + `CsrfLayer` sendiri (paling luar, ruling K15).
+/// `csrf_secret` minimal 32 byte (pakai secret yang sama dengan `web_router`);
+/// `secure_cookie = false` hanya untuk HTTP lokal.
 pub fn router(cfg: InertiaConfig, csrf_secret: Vec<u8>, secure_cookie: bool) -> Router {
     Router::new()
-        .route("/", get(ping))
         .route("/spike/echo", post(echo))
         .route("/spike/forbidden", get(forbidden))
         .layer(InertiaLayer::new(cfg))
         .layer(CsrfLayer::new(csrf_secret).secure(secure_cookie))
-}
-
-async fn ping(ctx: InertiaCtx) -> Response {
-    let props = PingPageProps {
-        message: "pong dari Axum + veer".to_owned(),
-    };
-    render_page(ctx, PING, props)
 }
 
 async fn echo(ctx: InertiaCtx, InertiaForm(form): InertiaForm<EchoForm>) -> Response {

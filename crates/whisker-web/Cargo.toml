@@ -11,9 +11,15 @@ axum.workspace = true
 veer.workspace = true
 ts-rs.workspace = true
 serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+time.workspace = true
+cookie = "=0.18.2"
+ipnet = "=2.12.2"
+url = "=2.5.8"
 
 [dev-dependencies]
-tokio.workspace = true
 tower.workspace = true
 http-body-util.workspace = true
-serde_json.workspace = true

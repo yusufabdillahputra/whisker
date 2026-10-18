@@ -37,14 +37,24 @@ pub struct SessionUser {
 /// Buat sesi baru untuk `user_id` (saat login) dan hapus sesi kedaluwarsa milik user tersebut
 /// dalam satu transaksi. Id mentah dikembalikan sekali untuk cookie; DB hanya menyimpan hash.
 pub async fn create_session(pool: &PgPool, user_id: Uuid) -> Result<SessionId, CoreError> {
+    let mut tx = pool.begin().await?;
+    let sid = insert_session(&mut tx, user_id).await?;
+    tx.commit().await?;
+    Ok(sid)
+}
+
+/// Hapus sesi kedaluwarsa milik `user_id` lalu sisipkan sesi baru di dalam `tx`.
+async fn insert_session(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    user_id: Uuid,
+) -> Result<SessionId, CoreError> {
     let sid = generate_session_id();
     let hash = session_id_hash(sid.as_str());
-    let mut tx = pool.begin().await?;
     sqlx::query!(
         "DELETE FROM sessions WHERE user_id = $1 AND expires_at <= now()",
         user_id,
     )
-    .execute(&mut *tx)
+    .execute(&mut **tx)
     .await?;
     sqlx::query!(
         "INSERT INTO sessions (id_hash, user_id, expires_at) VALUES ($1, $2, now() + $3::interval)",
@@ -52,10 +62,34 @@ pub async fn create_session(pool: &PgPool, user_id: Uuid) -> Result<SessionId, C
         user_id,
         pg_interval(SESSION_TTL),
     )
-    .execute(&mut *tx)
+    .execute(&mut **tx)
     .await?;
-    tx.commit().await?;
     Ok(sid)
+}
+
+/// Login (Task 10): buat sesi hanya bila `users.password_hash` masih sama dengan hash yang baru
+/// diverifikasi dan user aktif. `None` = password berubah / user dinonaktifkan sejak verifikasi.
+pub async fn create_login_session(
+    pool: &PgPool,
+    user_id: Uuid,
+    verified_password_hash: &str,
+) -> Result<Option<SessionId>, CoreError> {
+    let mut tx = pool.begin().await?;
+    // `FOR SHARE` menunggu `UPDATE users` yang sedang berjalan (ganti password, nonaktifkan)
+    // sampai commit, lalu membaca versi terbaru baris. Sebaliknya, `UPDATE` yang datang belakangan
+    // menunggu transaksi ini selesai, dan `DELETE sessions`-nya lalu ikut menghapus sesi baru.
+    let current = sqlx::query_scalar!(
+        "SELECT password_hash FROM users WHERE id = $1 AND disabled_at IS NULL FOR SHARE",
+        user_id,
+    )
+    .fetch_optional(&mut *tx)
+    .await?;
+    if current.as_deref() != Some(verified_password_hash) {
+        return Ok(None);
+    }
+    let sid = insert_session(&mut tx, user_id).await?;
+    tx.commit().await?;
+    Ok(Some(sid))
 }
 
 /// Cari sesi dari id mentah cookie. `None` bila tak ada, kedaluwarsa (baris dihapus), atau user

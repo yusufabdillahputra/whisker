@@ -1,4 +1,5 @@
-//! Spike veer (ADR-001): protokol Inertia lewat router Axum nyata (`whisker_web::spike::router`).
+//! Spike veer (ADR-001): protokol Inertia lewat router Axum nyata. `GET /` spike diganti
+//! `Projects/Index` di Task 10 (ruling K3); kunjungan page diuji lewat `GET /login` `web_router`.
 
 use axum::Router;
 use axum::body::Body;
@@ -13,11 +14,28 @@ use whisker_web::page::{InertiaCtx, render_page};
 const VERSION: &str = "test-v1";
 const SECRET: [u8; 32] = [7u8; 32];
 
-fn app() -> Router {
-    let cfg = InertiaConfig::new()
+fn cfg() -> InertiaConfig {
+    InertiaConfig::new()
         .root_view(MinimalRootView::new().title("Whisker"))
-        .version_str(VERSION);
-    whisker_web::spike::router(cfg, SECRET.to_vec(), false)
+        .version_str(VERSION)
+}
+
+fn app() -> Router {
+    whisker_web::spike::router(cfg(), SECRET.to_vec(), false)
+}
+
+/// `web_router` dengan pool lazy: `GET /login` tanpa cookie sesi tidak menyentuh DB.
+fn web_app() -> Router {
+    let state = whisker_web::AppState::new(
+        sqlx::PgPool::connect_lazy("postgres://localhost/tidak-dipakai").unwrap(),
+        whisker_web::WebConfig {
+            cookie_secure: false,
+            public_url: url::Url::parse("http://localhost:8080").unwrap(),
+            trusted_proxies: Vec::new(),
+            csrf_secret: SECRET.to_vec(),
+        },
+    );
+    whisker_web::web_router(state, cfg())
 }
 
 async fn body_string(resp: axum::response::Response) -> String {
@@ -39,7 +57,11 @@ fn inertia_get(uri: &str) -> Request<Body> {
 
 /// GET pertama → nilai cookie `XSRF-TOKEN` yang diterbitkan `CsrfLayer`.
 async fn xsrf_token(app: &Router) -> String {
-    let resp = app.clone().oneshot(inertia_get("/")).await.unwrap();
+    let resp = app
+        .clone()
+        .oneshot(inertia_get("/spike/forbidden"))
+        .await
+        .unwrap();
     let set_cookie = resp
         .headers()
         .get_all(header::SET_COOKIE)
@@ -76,8 +98,8 @@ fn echo_post(text: &str, token: Option<&str>, cookie: Option<&str>) -> Request<B
 
 #[tokio::test]
 async fn initial_visit_returns_html_with_page_json() {
-    let resp = app()
-        .oneshot(Request::get("/").body(Body::empty()).unwrap())
+    let resp = web_app()
+        .oneshot(Request::get("/login").body(Body::empty()).unwrap())
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
@@ -89,35 +111,44 @@ async fn initial_visit_returns_html_with_page_json() {
     let end = html[start..].find("</script>").unwrap() + start;
     // veer meng-escape `/` jadi `\/` di dalam <script>; tetap JSON valid.
     let page: Value = serde_json::from_str(&html[start..end]).unwrap();
-    assert_eq!(page["component"], "Spike/Ping");
-    assert_eq!(page["url"], "/");
+    assert_eq!(page["component"], "Auth/Login");
+    assert_eq!(page["url"], "/login");
     assert_eq!(page["version"], VERSION);
     assert!(html.contains(r#"<div id="app"></div>"#), "{html}");
 }
 
 #[tokio::test]
 async fn inertia_visit_returns_json_page_object() {
-    let resp = app().oneshot(inertia_get("/")).await.unwrap();
+    let resp = web_app().oneshot(inertia_get("/login")).await.unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
     assert_eq!(resp.headers()["x-inertia"], "true");
     let page = body_json(resp).await;
-    assert_eq!(page["component"], "Spike/Ping");
-    assert!(!page["props"]["message"].as_str().unwrap().is_empty());
-    assert_eq!(page["url"], "/");
+    assert_eq!(page["component"], "Auth/Login");
+    assert_eq!(page["props"]["auth"], Value::Null);
+    assert_eq!(page["url"], "/login");
     assert_eq!(page["version"], VERSION);
 }
 
 #[tokio::test]
 async fn version_mismatch_returns_409_with_location() {
-    let req = Request::get("/")
+    let req = Request::get("/login")
         .header("X-Inertia", "true")
         .header("X-Inertia-Version", "versi-lama")
         .body(Body::empty())
         .unwrap();
-    let resp = app().oneshot(req).await.unwrap();
+    let resp = web_app().oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::CONFLICT);
     let location = resp.headers()["x-inertia-location"].to_str().unwrap();
-    assert!(location.ends_with('/'), "X-Inertia-Location: {location}");
+    assert!(
+        location.ends_with("/login"),
+        "X-Inertia-Location: {location}"
+    );
+}
+
+#[tokio::test]
+async fn spike_root_route_removed() {
+    let resp = app().oneshot(inertia_get("/")).await.unwrap();
+    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]

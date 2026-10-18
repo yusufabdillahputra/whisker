@@ -4,12 +4,28 @@ use axum::Router;
 use axum::body::Body;
 use axum::http::{Request, StatusCode, header};
 use http_body_util::BodyExt;
+use std::collections::HashMap;
 use tower::ServiceExt;
+use whisker::config::Config;
+
+/// App lengkap dengan pool lazy: `GET /login` tanpa cookie sesi tidak menyentuh DB.
+fn app_with(vite_dev_server: Option<&str>) -> Router {
+    let mut env: HashMap<String, String> = HashMap::new();
+    env.insert(
+        "DATABASE_URL".into(),
+        "postgres://localhost/tidak-dipakai".into(),
+    );
+    env.insert("WHISKER_PUBLIC_URL".into(), "http://localhost:8080".into());
+    if let Some(url) = vite_dev_server {
+        env.insert("WHISKER_VITE_DEV_SERVER".into(), url.into());
+    }
+    let config = Config::from_env(&env).unwrap();
+    let pool = sqlx::PgPool::connect_lazy(&config.database_url).unwrap();
+    whisker::app::compose_app(pool, &config, vec![9u8; 32]).expect("manifest Vite ter-embed")
+}
 
 fn app() -> Router {
-    let cfg = whisker::app::inertia_config(None).expect("manifest Vite ter-embed");
-    let web = whisker_web::spike::router(cfg, vec![9u8; 32], false);
-    whisker::app::build_app(web, Router::new())
+    app_with(None)
 }
 
 async fn get(app: &Router, uri: &str) -> axum::response::Response {
@@ -37,7 +53,7 @@ fn entry_script(html: &str) -> String {
 #[tokio::test]
 async fn serves_index_and_hashed_asset_from_embed() {
     let app = app();
-    let index = get(&app, "/").await;
+    let index = get(&app, "/login").await;
     assert_eq!(index.status(), StatusCode::OK);
     let html = body_string(index).await;
     let js = entry_script(&html);
@@ -61,7 +77,7 @@ async fn serves_index_and_hashed_asset_from_embed() {
 
 #[tokio::test]
 async fn root_html_has_theme_script_viewport_fit_and_favicon() {
-    let html = body_string(get(&app(), "/").await).await;
+    let html = body_string(get(&app(), "/login").await).await;
     assert!(html.contains("viewport-fit=cover"), "{html}");
     assert_eq!(
         html.matches(r#"name="viewport""#).count(),
@@ -77,10 +93,8 @@ async fn root_html_has_theme_script_viewport_fit_and_favicon() {
 
 #[tokio::test]
 async fn dev_mode_points_scripts_at_vite_dev_server() {
-    let cfg = whisker::app::inertia_config(Some("http://localhost:5173")).unwrap();
-    let web = whisker_web::spike::router(cfg, vec![9u8; 32], false);
-    let app = whisker::app::build_app(web, Router::new());
-    let html = body_string(get(&app, "/").await).await;
+    let app = app_with(Some("http://localhost:5173"));
+    let html = body_string(get(&app, "/login").await).await;
     assert!(
         html.contains(r#"src="http://localhost:5173/@vite/client""#),
         "{html}"

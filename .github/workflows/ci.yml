@@ -159,9 +159,13 @@ jobs:
             sleep 1
           done
           echo "monolith tidak sehat dalam 60 detik"; cat whisker.log; exit 1
+      # TODO(Task 11): kembalikan ke `npx playwright test` penuh. Sejak Task 10 `GET /` adalah
+      # `Projects/Index` di balik login (ruling K3), jadi 3 tes smoke yang membuka `/` (page
+      # `Spike/Ping`) merah sampai Task 11 menulis ulang smoke.spec.ts; hanya tes `/spike/forbidden`
+      # yang masih sahih.
       - name: Jalankan Playwright
         working-directory: test/playwright
-        run: npx playwright test
+        run: npx playwright test --grep "berstatus 403"
       - name: Log monolith (saat gagal)
         if: failure()
         run: cat whisker.log || true

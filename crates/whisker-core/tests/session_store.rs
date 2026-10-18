@@ -3,12 +3,16 @@
 use sqlx::PgPool;
 use time::OffsetDateTime;
 use uuid::Uuid;
+use whisker_core::auth::password::hash_password;
 use whisker_core::auth::session_id::session_id_hash;
 use whisker_core::session::{
-    SESSION_TTL, create_session, delete_other_sessions, delete_session, delete_user_sessions,
-    lookup_session,
+    SESSION_TTL, create_login_session, create_session, delete_other_sessions, delete_session,
+    delete_user_sessions, lookup_session,
 };
-use whisker_core::user::{NewUser, Role, User, create_user, disable_user};
+use whisker_core::user::{
+    ChangePassword, NewUser, Role, User, change_password, create_user, disable_user,
+    find_auth_by_email,
+};
 
 async fn create(pool: &PgPool, email: &str) -> User {
     create_user(
@@ -298,4 +302,96 @@ async fn db_stores_only_hash(pool: PgPool) {
             .unwrap();
     assert_eq!(stored, vec![session_id_hash(sid.as_str()).to_vec()]);
     assert_ne!(stored[0], sid.as_str().as_bytes());
+}
+
+// --- Task 10: TOCTOU login vs ganti password (catatan review Task 07). ---
+
+const PLACEHOLDER_HASH: &str = "$argon2id$v=19$m=19456,t=2,p=1$c2FsdA$aGFzaA";
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn login_session_created_when_password_hash_unchanged(pool: PgPool) {
+    let u = create(&pool, "ani@example.com").await;
+    let sid = create_login_session(&pool, u.id, PLACEHOLDER_HASH)
+        .await
+        .unwrap()
+        .expect("hash sama -> sesi dibuat");
+    assert!(row_exists(&pool, &session_id_hash(sid.as_str())).await);
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn login_session_refused_after_password_changed_since_verification(pool: PgPool) {
+    let old_password = "kata-sandi-lama-123";
+    let user = create_user(
+        &pool,
+        NewUser {
+            email: "ani@example.com",
+            display_name: "Ani",
+            password_hash: hash_password(old_password).unwrap(),
+            role: Role::Member,
+            must_change_password: false,
+        },
+    )
+    .await
+    .unwrap();
+    // Login membaca hash lalu memverifikasi password ...
+    let seen = find_auth_by_email(&pool, "ani@example.com")
+        .await
+        .unwrap()
+        .unwrap()
+        .password_hash;
+    // ... ganti password menyelinap sebelum sesi dibuat.
+    change_password(
+        &pool,
+        user.id,
+        ChangePassword {
+            current_password: old_password.to_owned(),
+            new_password: "kata-sandi-baru-456".to_owned(),
+            new_password_confirmation: "kata-sandi-baru-456".to_owned(),
+        },
+        &[0u8; 32],
+    )
+    .await
+    .unwrap();
+
+    let created = create_login_session(&pool, user.id, &seen).await.unwrap();
+    assert!(created.is_none(), "sesi tak boleh lahir dari password lama");
+    assert_eq!(session_count(&pool, user.id).await, 0);
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn login_session_waits_for_concurrent_password_update_then_refuses(pool: PgPool) {
+    let u = create(&pool, "ani@example.com").await;
+    let mut tx = pool.begin().await.unwrap();
+    sqlx::query("UPDATE users SET password_hash = 'hash-baru', updated_at = now() WHERE id = $1")
+        .bind(u.id)
+        .execute(&mut *tx)
+        .await
+        .unwrap();
+
+    let login = tokio::spawn({
+        let pool = pool.clone();
+        async move { create_login_session(&pool, u.id, PLACEHOLDER_HASH).await }
+    });
+    tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+    assert!(
+        !login.is_finished(),
+        "pembuatan sesi menunggu kunci baris user yang sedang diubah"
+    );
+    tx.commit().await.unwrap();
+
+    let created = login.await.unwrap().unwrap();
+    assert!(created.is_none());
+    assert_eq!(session_count(&pool, u.id).await, 0);
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn login_session_refused_for_disabled_user(pool: PgPool) {
+    let admin = create(&pool, "admin@example.com").await;
+    let u = create(&pool, "ani@example.com").await;
+    disable_user(&pool, admin.id, u.id).await.unwrap();
+    let created = create_login_session(&pool, u.id, PLACEHOLDER_HASH)
+        .await
+        .unwrap();
+    assert!(created.is_none());
+    assert_eq!(session_count(&pool, u.id).await, 0);
 }
