@@ -122,6 +122,9 @@ jobs:
       WHISKER_PUBLIC_URL: http://127.0.0.1:8080
       WHISKER_HTTP_ADDR: 127.0.0.1:8080
       E2E_BASE_URL: http://127.0.0.1:8080
+      # DB CI kosong: bootstrap admin (Task 06) gagal cepat tanpa env ini (K5). Nilai uji non-rahasia.
+      WHISKER_ADMIN_EMAIL: e2e-admin@example.com
+      WHISKER_ADMIN_PASSWORD: ci-e2e-admin-password
     steps:
       - uses: actions/checkout@v7
       - name: Pasang toolchain Rust

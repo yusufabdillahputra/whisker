@@ -65,6 +65,11 @@ fn optional(env: &impl EnvSource, name: &'static str) -> Option<String> {
         .filter(|v| !v.is_empty())
 }
 
+/// Nilai env apa adanya (tanpa trim, untuk rahasia seperti password); hanya kosong yang dianggap absen.
+fn optional_raw(env: &impl EnvSource, name: &'static str) -> Option<String> {
+    env.get(name).filter(|v| !v.is_empty())
+}
+
 fn required(env: &impl EnvSource, name: &'static str) -> Result<String, ConfigError> {
     let v = optional(env, name).ok_or(ConfigError::Missing(name))?;
     if is_placeholder(&v) {
@@ -186,7 +191,7 @@ impl Config {
             trusted_proxies,
             admin: BootstrapEnv {
                 email: optional(env, "WHISKER_ADMIN_EMAIL"),
-                password: optional(env, "WHISKER_ADMIN_PASSWORD"),
+                password: optional_raw(env, "WHISKER_ADMIN_PASSWORD"),
             },
             vite_dev_server: optional(env, "WHISKER_VITE_DEV_SERVER"),
         })
@@ -346,6 +351,25 @@ mod tests {
         let c = Config::from_env(&e).unwrap();
         assert_eq!(c.admin.email.as_deref(), Some("a@b.id"));
         assert_eq!(c.admin.password.as_deref(), Some("pw-rahasia"));
+    }
+
+    #[test]
+    fn bootstrap_password_taken_raw_email_trimmed() {
+        let mut e = minimal();
+        e.insert("WHISKER_ADMIN_EMAIL".into(), "  a@b.id \n".into());
+        e.insert("WHISKER_ADMIN_PASSWORD".into(), "  pw rahasia  ".into());
+        let c = Config::from_env(&e).unwrap();
+        assert_eq!(c.admin.email.as_deref(), Some("a@b.id"));
+        assert_eq!(c.admin.password.as_deref(), Some("  pw rahasia  "));
+
+        // Hanya nilai kosong yang dianggap absen; spasi saja tetap nilai (ditolak kebijakan password).
+        e.insert("WHISKER_ADMIN_PASSWORD".into(), "".into());
+        assert_eq!(Config::from_env(&e).unwrap().admin.password, None);
+        e.insert("WHISKER_ADMIN_PASSWORD".into(), "   ".into());
+        assert_eq!(
+            Config::from_env(&e).unwrap().admin.password.as_deref(),
+            Some("   ")
+        );
     }
 
     #[test]

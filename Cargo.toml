@@ -26,7 +26,7 @@ getrandom = "=0.4.3"
 tracing = "=0.1.44"
 tracing-subscriber = { version = "=0.3.23", features = ["env-filter"] }
 # ADR-007: driver + migration + tes integrasi. TLS rustls (Neon butuh sslmode=require).
-sqlx = { version = "=0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "macros", "migrate"] }
+sqlx = { version = "=0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "macros", "migrate", "uuid", "time"] }
 
 # Task 04: primitif auth (Argon2id, PAT whk_, id sesi). Pin eksak.
 argon2 = "=0.6.0"
@@ -38,3 +38,6 @@ subtle = "=2.6.1"
 # Task 05: nilai domain bersama (slug NFKD, default avatar dari UUID).
 unicode-normalization = "=0.1.26"
 uuid = "=1.28.0"
+
+# Task 06: kolom timestamptz repositori user (asumsi Q23: crate `time`).
+time = "=0.3.55"

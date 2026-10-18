@@ -1593,10 +1593,12 @@ dependencies = [
  "sha2 0.10.9",
  "smallvec",
  "thiserror",
+ "time",
  "tokio",
  "tokio-stream",
  "tracing",
  "url",
+ "uuid",
  "webpki-roots",
 ]
 
@@ -1630,7 +1632,9 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "sqlx-core",
+ "sqlx-mysql",
  "sqlx-postgres",
+ "sqlx-sqlite",
  "syn 2.0.119",
  "thiserror",
  "tokio",
@@ -1660,7 +1664,9 @@ dependencies = [
  "sha2 0.11.1",
  "sqlx-core",
  "thiserror",
+ "time",
  "tracing",
+ "uuid",
 ]
 
 [[package]]
@@ -1694,7 +1700,9 @@ dependencies = [
  "sqlx-core",
  "stringprep",
  "thiserror",
+ "time",
  "tracing",
+ "uuid",
  "whoami",
 ]
 
@@ -1718,8 +1726,10 @@ dependencies = [
  "serde",
  "sqlx-core",
  "thiserror",
+ "time",
  "tracing",
  "url",
+ "uuid",
 ]
 
 [[package]]
@@ -2105,6 +2115,7 @@ version = "1.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7cc1186384beb7dd8eedea376413fd654937285ea6c9cfbb928dc3043ea4b606"
 dependencies = [
+ "getrandom 0.4.3",
  "js-sys",
  "wasm-bindgen",
 ]
@@ -2256,7 +2267,9 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "url",
+ "uuid",
  "veer",
+ "whisker-core",
  "whisker-mcp",
  "whisker-web",
 ]
@@ -2274,6 +2287,7 @@ dependencies = [
  "sha2 0.11.1",
  "sqlx",
  "subtle",
+ "time",
  "tokio",
  "ts-rs",
  "unicode-normalization",

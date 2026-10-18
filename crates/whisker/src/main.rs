@@ -1,11 +1,12 @@
 //! Binary Whisker: `serve` (default) dan `healthcheck`. Config env fail-fast.
-//! `serve`: config → pool → migrate (advisory lock) → serve.
+//! `serve`: config → pool → migrate (advisory lock) → bootstrap admin → serve.
 
 use clap::Parser;
 use std::process::ExitCode;
 use std::time::Duration;
 use tracing_subscriber::EnvFilter;
 use whisker::app::{build_app, inertia_config};
+use whisker::bootstrap::bootstrap_admin;
 use whisker::cli::{Cli, Command};
 use whisker::config::{Config, ProcessEnv, http_addr_from_env};
 use whisker::health::health_router;
@@ -45,6 +46,8 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|e| format!("migration gagal: {e}"))?;
     let migration = latest_migration_version(&pool).await?;
     tracing::info!(migration = ?migration, "migration database terkini");
+    let bootstrap = bootstrap_admin(&pool, &config.admin).await?;
+    tracing::info!(outcome = ?bootstrap, "bootstrap admin");
 
     // Secret CSRF acak per proses: cookie lama tak berlaku setelah restart (cukup untuk spike).
     let mut csrf_secret = vec![0u8; 32];

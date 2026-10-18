@@ -171,6 +171,22 @@ mod tests {
         );
     }
 
+    /// Vektor terkunci: `users.avatar_key` tersimpan bergantung pada pemetaan ini (Task 06 pertama kali
+    /// menyimpannya). Nilai diverifikasi independen (SHA-256 Python, 8 byte BE mod 40). Mengubah formula
+    /// berarti avatar default user lama tak lagi cocok — tes ini harus gagal keras.
+    #[test]
+    fn default_for_pinned_vectors() {
+        assert_eq!(AvatarKey::default_for(Uuid::nil()), AvatarKey::HumanM14);
+        assert_eq!(
+            AvatarKey::default_for(Uuid::from_u128(0x0199_f0a2_7c4e_7d3a_8b1f_2c3d_4e5f_6a7b)),
+            AvatarKey::Animal06
+        );
+        assert_eq!(
+            AvatarKey::default_for(Uuid::from_u128(0x1234_5678_9abc_def0_1234_5678_9abc_def0)),
+            AvatarKey::HumanM15
+        );
+    }
+
     #[test]
     fn default_for_is_deterministic() {
         let id = Uuid::from_u128(0x1234_5678_9abc_def0_1234_5678_9abc_def0);
