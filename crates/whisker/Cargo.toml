@@ -15,7 +15,11 @@ tokio.workspace = true
 getrandom.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+clap = { version = "=4.6.7", features = ["derive"] }
+url = "=2.5.8"
+ipnet = "=2.12.2"
 
 [dev-dependencies]
 tower.workspace = true
 http-body-util.workspace = true
+assert_cmd = "=2.2.2"
