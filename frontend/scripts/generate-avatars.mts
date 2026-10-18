@@ -23,22 +23,30 @@ const FLUENT_METADATA =
   "<dc:source>https://github.com/microsoft/fluentui-emoji</dc:source>" +
   "<dc:rights>MIT License. Copyright (c) Microsoft Corporation.</dc:rights></rdf:Description></rdf:RDF></metadata>";
 
-function renderLorelei(key: string, p: Extract<PresetSpec, { kind: "lorelei" }>): string {
-  return new Avatar(loreleiStyle, {
+type LoreleiPreset = Extract<PresetSpec, { kind: "lorelei" }>;
+
+/** Opsi DiceBear per preset (spesifikasi "Kunci dan opsi bersama"); murni, tanpa efek samping. */
+export function loreleiOptions(key: string, p: LoreleiPreset) {
+  const male = key.startsWith("human-m-");
+  return {
     seed: `whisker-${key}`,
     borderRadius: 50,
-    backgroundColorFill: "solid",
+    backgroundColorFill: "solid" as const,
     backgroundColor: [p.background],
     hairVariant: p.hair,
     mouthVariant: p.mouth,
     earringsProbability: p.earrings ? 100 : 0,
-    beardVariant: "variant02",
     beardProbability: p.beard ? 100 : 0,
-    hairAccessoriesProbability: 0,
+    ...(p.beard ? { beardVariant: "variant02" } : {}),
+    ...(male ? { hairAccessoriesProbability: 0 } : {}),
     glassesProbability: 0,
     frecklesProbability: 0,
     size: SIZE,
-  } as never).toString();
+  };
+}
+
+function renderLorelei(key: string, p: LoreleiPreset): string {
+  return new Avatar(loreleiStyle, loreleiOptions(key, p) as never).toString();
 }
 
 async function renderFluent(p: Extract<PresetSpec, { kind: "fluent" }>, fluentDir: string): Promise<string> {

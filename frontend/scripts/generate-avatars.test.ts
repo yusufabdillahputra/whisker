@@ -2,7 +2,8 @@ import { mkdtemp, readFile, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { generateAvatars } from "./generate-avatars.mts";
+import { PRESETS } from "../avatars/presets.ts";
+import { generateAvatars, loreleiOptions } from "./generate-avatars.mts";
 
 const root = path.resolve(import.meta.dirname, "..");
 const keysFile = path.join(root, "src/types/generated/avatar-keys.json");
@@ -65,5 +66,34 @@ describe("generateAvatars", () => {
     const { files } = await run();
     expect(files).toHaveLength(40);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("loreleiOptions", () => {
+  const opts = (key: keyof typeof PRESETS) => {
+    const p = PRESETS[key];
+    if (p.kind !== "lorelei") throw new Error("bukan lorelei");
+    return loreleiOptions(key, p) as Record<string, unknown>;
+  };
+
+  it("laki-laki: hairAccessoriesProbability 0 dan earringsProbability 0", () => {
+    const o = opts("human-m-03");
+    expect(o.hairAccessoriesProbability).toBe(0);
+    expect(o.earringsProbability).toBe(0);
+  });
+
+  it("perempuan: tanpa kunci hairAccessoriesProbability", () => {
+    expect("hairAccessoriesProbability" in opts("human-f-01")).toBe(false);
+    expect("hairAccessoriesProbability" in opts("human-f-02")).toBe(false);
+  });
+
+  it("anting: f-01 100, f-02 0", () => {
+    expect(opts("human-f-01").earringsProbability).toBe(100);
+    expect(opts("human-f-02").earringsProbability).toBe(0);
+  });
+
+  it("janggut: m-04 100, m-03 0", () => {
+    expect(opts("human-m-04").beardProbability).toBe(100);
+    expect(opts("human-m-03").beardProbability).toBe(0);
   });
 });
