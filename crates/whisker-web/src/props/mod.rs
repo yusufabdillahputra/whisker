@@ -7,7 +7,7 @@ pub mod errors;
 pub mod projects;
 pub mod shared;
 
-pub use account::AccountSecurityProps;
+pub use account::{AccountProfileProps, AccountSecurityProps, AvatarOption};
 pub use auth::LoginPageProps;
 pub use errors::ErrorPageProps;
 pub use projects::{ProjectCard, ProjectsIndexProps};

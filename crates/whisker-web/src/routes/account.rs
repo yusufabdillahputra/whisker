@@ -1,4 +1,4 @@
-//! `GET /account` → `302 /account/profile` (page profil: Task 14).
+//! `GET /account` → `302 /account/profile` .
 
 use axum::http::Method;
 use axum::response::Response;

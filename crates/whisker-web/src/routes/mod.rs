@@ -1,6 +1,7 @@
 //! Rute page web (di balik sesi, guard, CSRF — dirakit `web_router`).
 
 pub mod account;
+pub mod account_profile;
 pub mod account_security;
 pub mod auth;
 pub mod errors;
@@ -18,6 +19,10 @@ pub fn router() -> Router<AppState> {
         .route("/login", get(auth::login_page).post(auth::login))
         .route("/logout", post(auth::logout))
         .route("/account", get(account::index))
+        .route(
+            account::PROFILE_PATH,
+            get(account_profile::show).put(account_profile::update),
+        )
         .route(SECURITY_PATH, get(account_security::show))
         .route(PASSWORD_PATH, put(account_security::update_password))
         .fallback(errors::not_found)
