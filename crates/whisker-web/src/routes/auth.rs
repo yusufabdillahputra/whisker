@@ -20,7 +20,7 @@ use crate::guard::{SECURITY_PATH, redirect};
 use crate::page::{InertiaCtx, ResponseHeaders, internal_error, render_errors_status, render_page};
 use crate::props::LoginPageProps;
 use crate::session::{CurrentSession, append_cookie, removal_cookie, session_cookie};
-use crate::throttle::{ThrottleDecision, ThrottleKey};
+use crate::throttle::{Limited, ThrottleKey};
 
 pub const LOGIN_PAGE: &str = "Auth/Login";
 /// Pesan sama untuk semua penyebab gagal login (B4).
@@ -62,18 +62,24 @@ pub async fn login(
     ctx: InertiaCtx,
     InertiaForm(form): InertiaForm<LoginForm>,
 ) -> Response {
+    // Reservasi atomik sebelum Argon2: percobaan berjalan ikut dihitung (burst paralel tak bisa
+    // melampaui kuota). `attempt` yang di-drop = kegagalan tercatat.
     let key = ThrottleKey::new(&form.email, ip);
-    if let ThrottleDecision::Limited { retry_after } = state.throttle.check(&key, Instant::now()) {
-        extra.insert(
-            RETRY_AFTER,
-            HeaderValue::from(retry_after_secs(retry_after)),
-        );
-        return form_error(ctx, StatusCode::TOO_MANY_REQUESTS, LOGIN_THROTTLED);
-    }
+    let attempt = match state.throttle.try_begin(&key, Instant::now()) {
+        Ok(attempt) => attempt,
+        Err(Limited { retry_after }) => {
+            extra.insert(
+                RETRY_AFTER,
+                HeaderValue::from(retry_after_secs(retry_after)),
+            );
+            return form_error(ctx, StatusCode::TOO_MANY_REQUESTS, LOGIN_THROTTLED);
+        }
+    };
 
     let record = match find_auth_by_email(&state.pool, &form.email).await {
         Ok(record) => record,
         Err(e) => {
+            attempt.abandon();
             tracing::error!(error = %e, "login: baca user gagal");
             return internal_error();
         }
@@ -85,15 +91,23 @@ pub async fn login(
     )
     .await;
     let Some(record) = record.filter(|r| verified && !r.disabled) else {
-        state.throttle.record_failure(&key, Instant::now());
+        drop(attempt); // kegagalan tercatat
         return form_error(ctx, StatusCode::UNPROCESSABLE_ENTITY, LOGIN_FAILED);
     };
 
     // Hash dicek ulang di dalam transaksi INSERT sesi (TOCTOU vs ganti password bersamaan).
     let sid = match create_login_session(&state.pool, record.user_id, &record.password_hash).await {
-        Ok(Some(sid)) => sid,
-        Ok(None) => return form_error(ctx, StatusCode::UNPROCESSABLE_ENTITY, LOGIN_FAILED),
+        Ok(Some(sid)) => {
+            attempt.succeeded();
+            sid
+        }
+        // Password berubah / user dinonaktifkan bersamaan: bukan tebakan salah, tidak dihitung.
+        Ok(None) => {
+            attempt.abandon();
+            return form_error(ctx, StatusCode::UNPROCESSABLE_ENTITY, LOGIN_FAILED);
+        }
         Err(e) => {
+            attempt.abandon();
             tracing::error!(error = %e, "login: buat sesi gagal");
             return internal_error();
         }

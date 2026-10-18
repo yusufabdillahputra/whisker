@@ -1,9 +1,13 @@
 //! Throttle login in-memory per proses (A2): `max_failures` kegagalan dalam `window` per email
 //! **dan** per IP → `429`. Jendela bergeser; hanya kegagalan yang dicatat.
+//!
+//! Login memakai reservasi atomik [`LoginThrottle::try_begin`]: percobaan yang sedang berjalan
+//! (belum selesai verifikasi Argon2) dihitung sebagai kegagalan sementara di bawah mutex yang sama,
+//! sehingga burst paralel tidak bisa melampaui kuota (dan tak memicu ratusan Argon2 serentak).
 
 use std::collections::{HashMap, VecDeque};
 use std::net::IpAddr;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 /// Kunci throttle. `email` sudah trim + lowercase (pakai [`ThrottleKey::new`]).
@@ -48,6 +52,9 @@ pub struct LoginThrottle {
 struct State {
     by_email: HashMap<String, VecDeque<Instant>>,
     by_ip: HashMap<IpAddr, VecDeque<Instant>>,
+    /// Reservasi yang belum selesai (dihitung sebagai kegagalan sementara).
+    in_flight_email: HashMap<String, u32>,
+    in_flight_ip: HashMap<IpAddr, u32>,
     last_prune: Option<Instant>,
 }
 
@@ -69,25 +76,73 @@ impl LoginThrottle {
     /// Dipanggil sebelum verifikasi password.
     pub fn check(&self, key: &ThrottleKey, now: Instant) -> ThrottleDecision {
         let state = self.lock();
-        let retry_after = [state.by_email.get(&key.email), state.by_ip.get(&key.ip)]
-            .into_iter()
-            .flatten()
-            .filter_map(|failures| self.retry_after(failures, now))
-            .max();
-        match retry_after {
+        match self.limited_locked(&state, key, now) {
             Some(retry_after) => ThrottleDecision::Limited { retry_after },
             None => ThrottleDecision::Allowed,
         }
     }
 
+    /// Reservasi atomik satu percobaan login: `Err` bila email atau IP (kegagalan tercatat +
+    /// percobaan yang sedang berjalan) sudah mencapai `max_failures`. `Attempt` yang di-drop tanpa
+    /// [`Attempt::succeeded`] / [`Attempt::abandon`] dicatat sebagai kegagalan.
+    pub fn try_begin(
+        self: &Arc<Self>,
+        key: &ThrottleKey,
+        now: Instant,
+    ) -> Result<Attempt, Limited> {
+        let mut state = self.lock();
+        if let Some(retry_after) = self.limited_locked(&state, key, now) {
+            return Err(Limited { retry_after });
+        }
+        *state.in_flight_email.entry(key.email.clone()).or_default() += 1;
+        *state.in_flight_ip.entry(key.ip).or_default() += 1;
+        Ok(Attempt {
+            throttle: Arc::clone(self),
+            key: key.clone(),
+            settled: false,
+        })
+    }
+
+    fn limited_locked(&self, state: &State, key: &ThrottleKey, now: Instant) -> Option<Duration> {
+        let email = self.retry_after(
+            state.by_email.get(&key.email),
+            state.in_flight_email.get(&key.email).copied().unwrap_or(0),
+            now,
+        );
+        let ip = self.retry_after(
+            state.by_ip.get(&key.ip),
+            state.in_flight_ip.get(&key.ip).copied().unwrap_or(0),
+            now,
+        );
+        email.into_iter().chain(ip).max()
+    }
+
+    /// Lepas reservasi `key` (tanpa mencatat apa pun).
+    fn release(&self, state: &mut State, key: &ThrottleKey) {
+        fn dec<K: std::hash::Hash + Eq>(map: &mut HashMap<K, u32>, k: &K) {
+            if let Some(n) = map.get_mut(k) {
+                *n = n.saturating_sub(1);
+                if *n == 0 {
+                    map.remove(k);
+                }
+            }
+        }
+        dec(&mut state.in_flight_email, &key.email);
+        dec(&mut state.in_flight_ip, &key.ip);
+    }
+
     /// Catat satu kegagalan login untuk email dan IP pada `key`.
     pub fn record_failure(&self, key: &ThrottleKey, now: Instant) {
         let mut state = self.lock();
+        self.record_failure_locked(&mut state, key, now);
+    }
+
+    fn record_failure_locked(&self, state: &mut State, key: &ThrottleKey, now: Instant) {
         if state
             .last_prune
             .is_none_or(|last| now.saturating_duration_since(last) >= PRUNE_INTERVAL)
         {
-            self.prune_locked(&mut state, now);
+            self.prune_locked(state, now);
         }
         let cap = self.max_failures as usize;
         push_capped(
@@ -120,13 +175,21 @@ impl LoginThrottle {
         state.last_prune = Some(now);
     }
 
-    /// Sisa waktu sampai kunci bebas, bila kegagalan dalam jendela sudah `>= max_failures`.
-    fn retry_after(&self, failures: &VecDeque<Instant>, now: Instant) -> Option<Duration> {
-        let active: Vec<Instant> = failures
-            .iter()
+    /// Sisa waktu sampai kunci bebas, bila kegagalan dalam jendela + reservasi berjalan (dihitung
+    /// sebagai kegagalan pada `now`) sudah `>= max_failures`.
+    fn retry_after(
+        &self,
+        failures: Option<&VecDeque<Instant>>,
+        in_flight: u32,
+        now: Instant,
+    ) -> Option<Duration> {
+        let mut active: Vec<Instant> = failures
+            .into_iter()
+            .flatten()
             .copied()
             .filter(|t| now.saturating_duration_since(*t) < self.window)
             .collect();
+        active.extend(std::iter::repeat_n(now, in_flight as usize));
         if active.len() < self.max_failures as usize {
             return None;
         }
@@ -142,7 +205,56 @@ impl LoginThrottle {
     #[cfg(test)]
     fn tracked_keys(&self) -> usize {
         let state = self.lock();
-        state.by_email.len() + state.by_ip.len()
+        state.by_email.len()
+            + state.by_ip.len()
+            + state.in_flight_email.len()
+            + state.in_flight_ip.len()
+    }
+}
+
+/// Reservasi ditolak throttle.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Limited {
+    pub retry_after: Duration,
+}
+
+/// Reservasi satu percobaan login (lihat [`LoginThrottle::try_begin`]). Drop tanpa penyelesaian
+/// eksplisit = kegagalan tercatat (gagal verifikasi, atau handler berhenti di tengah jalan).
+pub struct Attempt {
+    throttle: Arc<LoginThrottle>,
+    key: ThrottleKey,
+    settled: bool,
+}
+
+impl Attempt {
+    /// Login sukses: lepas reservasi, tidak dihitung kegagalan.
+    pub fn succeeded(mut self) {
+        self.settle(false);
+    }
+
+    /// Percobaan batal karena sebab di luar tebakan password (error server, password berubah
+    /// bersamaan): lepas reservasi tanpa mencatat kegagalan.
+    pub fn abandon(mut self) {
+        self.settle(false);
+    }
+
+    fn settle(&mut self, failed: bool) {
+        if self.settled {
+            return;
+        }
+        self.settled = true;
+        let mut state = self.throttle.lock();
+        self.throttle.release(&mut state, &self.key);
+        if failed {
+            self.throttle
+                .record_failure_locked(&mut state, &self.key, Instant::now());
+        }
+    }
+}
+
+impl Drop for Attempt {
+    fn drop(&mut self) {
+        self.settle(true);
     }
 }
 
@@ -289,6 +401,75 @@ mod tests {
         assert_eq!(t.tracked_keys(), 2);
         t.prune(t0 + 32 * MIN);
         assert_eq!(t.tracked_keys(), 0);
+    }
+
+    fn shared() -> std::sync::Arc<LoginThrottle> {
+        std::sync::Arc::new(LoginThrottle::standard())
+    }
+
+    #[test]
+    fn in_flight_attempts_count_toward_limit() {
+        let t = shared();
+        let now = Instant::now();
+        let k = key("ani@example.com", 1);
+        let held: Vec<Attempt> = (0..5)
+            .map(|_| t.try_begin(&k, now).expect("kuota"))
+            .collect();
+        assert!(
+            t.try_begin(&k, now).is_err(),
+            "percobaan ke-6 selagi 5 berjalan"
+        );
+        // Per IP juga: email lain dari IP yang sama tertahan.
+        assert!(t.try_begin(&key("budi@example.com", 1), now).is_err());
+        assert!(t.try_begin(&key("budi@example.com", 2), now).is_ok());
+        drop(held);
+    }
+
+    #[test]
+    fn dropped_attempt_records_failure() {
+        let t = shared();
+        let now = Instant::now();
+        let k = key("ani@example.com", 1);
+        for _ in 0..5 {
+            drop(t.try_begin(&k, now).unwrap());
+        }
+        assert!(limited(t.check(&k, now)));
+        assert!(t.try_begin(&k, now).is_err());
+    }
+
+    #[test]
+    fn succeeded_attempt_not_counted() {
+        let t = shared();
+        let now = Instant::now();
+        let k = key("ani@example.com", 1);
+        for _ in 0..10 {
+            t.try_begin(&k, now).unwrap().succeeded();
+        }
+        assert_eq!(t.check(&k, now), ThrottleDecision::Allowed);
+        assert_eq!(t.tracked_keys(), 0, "reservasi dilepas tanpa jejak");
+    }
+
+    #[test]
+    fn abandoned_attempt_not_counted() {
+        let t = shared();
+        let now = Instant::now();
+        let k = key("ani@example.com", 1);
+        for _ in 0..10 {
+            t.try_begin(&k, now).unwrap().abandon();
+        }
+        assert_eq!(t.check(&k, now), ThrottleDecision::Allowed);
+    }
+
+    #[test]
+    fn limited_reservation_reports_retry_after() {
+        let t = shared();
+        let t0 = Instant::now();
+        let k = key("ani@example.com", 1);
+        for _ in 0..5 {
+            t.record_failure(&k, t0);
+        }
+        let err = t.try_begin(&k, t0 + 5 * MIN).err().expect("limited");
+        assert_eq!(err.retry_after, 10 * MIN);
     }
 
     #[test]

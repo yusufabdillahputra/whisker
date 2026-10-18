@@ -38,22 +38,26 @@ impl FromRequestParts<AppState> for ClientIp {
 }
 
 /// IP klien dari `peer` dan `X-Forwarded-For` (dibaca dari kanan, proxy tepercaya dilompati).
-/// Semua nilai dinormalisasi (`::ffff:a.b.c.d` → IPv4). XFF tak valid → IP peer.
+/// Semua nilai dinormalisasi (`::ffff:a.b.c.d` → IPv4). Header dipecah per koma di level byte;
+/// segmen rusak (bukan UTF-8 / bukan IP) hanya berpengaruh bila ditemui **sebelum** hop tak
+/// tepercaya pertama dari kanan — saat itu hasilnya IP peer. Segmen di kiri hop itu (bisa dipalsukan
+/// klien) tidak pernah disentuh.
 pub fn resolve_client_ip(peer: SocketAddr, headers: &HeaderMap, trusted: &[IpNet]) -> IpAddr {
     let peer_ip = peer.ip().to_canonical();
     if !is_trusted(peer_ip, trusted) {
         return peer_ip;
     }
-    let mut hops = Vec::new();
-    for value in headers.get_all("x-forwarded-for") {
-        let Ok(text) = value.to_str() else {
-            return peer_ip;
-        };
-        hops.extend(text.split(',').map(str::trim));
-    }
+    let hops: Vec<&[u8]> = headers
+        .get_all("x-forwarded-for")
+        .iter()
+        .flat_map(|value| value.as_bytes().split(|b| *b == b','))
+        .collect();
     let mut client = peer_ip;
     for hop in hops.iter().rev() {
-        let Ok(ip) = hop.parse::<IpAddr>().map(|ip| ip.to_canonical()) else {
+        let parsed = std::str::from_utf8(hop)
+            .ok()
+            .and_then(|text| text.trim().parse::<IpAddr>().ok());
+        let Some(ip) = parsed.map(|ip| ip.to_canonical()) else {
             return peer_ip;
         };
         client = ip;
@@ -144,6 +148,49 @@ mod tests {
             &nets(&["10.0.0.0/8"]),
         );
         assert_eq!(got, ip("10.0.0.3"));
+    }
+
+    #[test]
+    fn non_utf8_segment_left_of_untrusted_hop_is_ignored() {
+        let trusted = nets(&["10.0.0.0/8"]);
+        let mut h = HeaderMap::new();
+        h.append(
+            "x-forwarded-for",
+            HeaderValue::from_bytes(b"\xff-sampah, 1.2.3.4").unwrap(),
+        );
+        assert_eq!(
+            resolve_client_ip(peer("10.0.0.1"), &h, &trusted),
+            ip("1.2.3.4")
+        );
+
+        // Header terpisah berisi byte rusak di kiri juga tidak menjatuhkan ke IP proxy.
+        let mut h = HeaderMap::new();
+        h.append(
+            "x-forwarded-for",
+            HeaderValue::from_bytes(b"\xfe\xff").unwrap(),
+        );
+        h.append(
+            "x-forwarded-for",
+            HeaderValue::from_static("1.2.3.4, 10.0.0.2"),
+        );
+        assert_eq!(
+            resolve_client_ip(peer("10.0.0.1"), &h, &trusted),
+            ip("1.2.3.4")
+        );
+    }
+
+    #[test]
+    fn non_utf8_segment_before_any_untrusted_hop_falls_back_to_peer() {
+        let trusted = nets(&["10.0.0.0/8"]);
+        let mut h = HeaderMap::new();
+        h.append(
+            "x-forwarded-for",
+            HeaderValue::from_bytes(b"1.2.3.4, \xff").unwrap(),
+        );
+        assert_eq!(
+            resolve_client_ip(peer("10.0.0.1"), &h, &trusted),
+            ip("10.0.0.1")
+        );
     }
 
     #[test]

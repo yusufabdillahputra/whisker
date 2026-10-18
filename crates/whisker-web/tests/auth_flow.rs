@@ -144,6 +144,54 @@ async fn sixth_failed_login_per_ip_across_emails_returns_429(pool: PgPool) {
 }
 
 #[sqlx::test(migrations = "../../migrations")]
+async fn parallel_burst_cannot_exceed_throttle_quota(pool: PgPool) {
+    const K: usize = 12;
+    let app = app(pool);
+    let mut c = Client::new(app.clone());
+    c.get("/login").await;
+    let token = c.cookie("XSRF-TOKEN").unwrap().to_owned();
+
+    let tasks: Vec<_> = (0..K)
+        .map(|_| {
+            let app = app.clone();
+            let token = token.clone();
+            tokio::spawn(async move {
+                let req = axum::http::Request::post("/login")
+                    .header("X-Inertia", "true")
+                    .header("X-Inertia-Version", VERSION)
+                    .header(axum::http::header::CONTENT_TYPE, "application/json")
+                    .header(axum::http::header::COOKIE, format!("XSRF-TOKEN={token}"))
+                    .header("X-XSRF-TOKEN", token)
+                    .body(axum::body::Body::from(
+                        json!({"email": "ani@example.com", "password": "password-salah-sekali"})
+                            .to_string(),
+                    ))
+                    .unwrap();
+                tower::ServiceExt::oneshot(app, req).await.unwrap().status()
+            })
+        })
+        .collect();
+    let mut statuses = Vec::new();
+    for t in tasks {
+        statuses.push(t.await.unwrap());
+    }
+    let failed = statuses
+        .iter()
+        .filter(|s| **s == StatusCode::UNPROCESSABLE_ENTITY)
+        .count();
+    let throttled = statuses
+        .iter()
+        .filter(|s| **s == StatusCode::TOO_MANY_REQUESTS)
+        .count();
+    assert!(
+        failed <= 5,
+        "maks 5 percobaan mencapai Argon2, dapat {failed}: {statuses:?}"
+    );
+    assert!(failed >= 1);
+    assert_eq!(failed + throttled, K, "{statuses:?}");
+}
+
+#[sqlx::test(migrations = "../../migrations")]
 async fn throttled_login_returns_429_even_with_correct_password(pool: PgPool) {
     seed_user(&pool, "ani@example.com", Role::Member, false).await;
     let mut c = Client::new(app(pool.clone()));
