@@ -1,11 +1,6 @@
 import { Head, useForm } from "@inertiajs/react";
 import type { FormEvent } from "react";
-
-// SEMENTARA (spike Task 01): diganti `import type { PingPageProps } from "@/types/generated/PingPageProps"`
-// begitu export `ts` veer tersedia (part 2). Harus cocok persis dengan struct Rust.
-interface PingPageProps {
-  message: string;
-}
+import type { PingPageProps } from "@/types/generated/PingPageProps";
 
 export default function Ping({ message }: PingPageProps) {
   const form = useForm({ text: "" });

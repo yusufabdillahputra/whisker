@@ -1,0 +1,21 @@
+[package]
+name = "whisker"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+whisker-web.workspace = true
+whisker-mcp.workspace = true
+axum.workspace = true
+veer.workspace = true
+rust-embed.workspace = true
+tokio.workspace = true
+getrandom.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+tower.workspace = true
+http-body-util.workspace = true
