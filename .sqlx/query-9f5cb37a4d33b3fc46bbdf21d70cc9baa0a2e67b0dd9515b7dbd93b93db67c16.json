@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE sessions SET expires_at = now() + $2::interval, last_seen_at = now()\n             WHERE id_hash = $1 AND last_seen_at <= now() - $3::interval",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Bytea",
+        "Interval",
+        "Interval"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9f5cb37a4d33b3fc46bbdf21d70cc9baa0a2e67b0dd9515b7dbd93b93db67c16"
+}

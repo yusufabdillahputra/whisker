@@ -1,9 +1,11 @@
 //! Nilai domain user (avatar preset, role) dan repositori tabel `users`.
 
 pub mod avatar;
+pub mod password_change;
 pub mod repo;
 
 pub use avatar::{AvatarGroup, AvatarKey, Role};
+pub use password_change::{ChangePassword, change_password};
 pub use repo::{
     count_users, create_user, disable_user, find_auth_by_email, get_user, list_users,
     update_profile,

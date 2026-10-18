@@ -11,15 +11,16 @@ use crate::error::{CoreError, ValidationErrors};
 /// Batas panjang `display_name` (karakter, setelah trim) — asumsi Q12.
 pub const DISPLAY_NAME_MAX: usize = 80;
 
-struct UserRow {
-    id: Uuid,
-    email: String,
-    display_name: String,
-    avatar_key: String,
-    role: String,
-    must_change_password: bool,
-    created_at: OffsetDateTime,
-    disabled_at: Option<OffsetDateTime>,
+/// Baris mentah `users` (tanpa hash); juga dipakai join `session::lookup_session`.
+pub(crate) struct UserRow {
+    pub(crate) id: Uuid,
+    pub(crate) email: String,
+    pub(crate) display_name: String,
+    pub(crate) avatar_key: String,
+    pub(crate) role: String,
+    pub(crate) must_change_password: bool,
+    pub(crate) created_at: OffsetDateTime,
+    pub(crate) disabled_at: Option<OffsetDateTime>,
 }
 
 impl TryFrom<UserRow> for User {
