@@ -15,7 +15,9 @@ serde_json.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
 tracing.workspace = true
-time.workspace = true
+# RFC 3339 untuk timestamp props (Task 15).
+time = { workspace = true, features = ["formatting"] }
+uuid.workspace = true
 cookie = "=0.18.2"
 ipnet = "=2.12.2"
 url = "=2.5.8"
@@ -23,3 +25,6 @@ url = "=2.5.8"
 [dev-dependencies]
 tower.workspace = true
 http-body-util.workspace = true
+# Task 15: token dari alur web diuji ke `/mcp` (router MCP nyata).
+whisker-mcp.workspace = true
+time = { workspace = true, features = ["parsing"] }

@@ -2713,8 +2713,10 @@ dependencies = [
  "tracing",
  "ts-rs",
  "url",
+ "uuid",
  "veer",
  "whisker-core",
+ "whisker-mcp",
 ]
 
 [[package]]

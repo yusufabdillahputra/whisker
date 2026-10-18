@@ -3,6 +3,7 @@
 pub mod account;
 pub mod account_profile;
 pub mod account_security;
+pub mod account_tokens;
 pub mod auth;
 pub mod errors;
 pub mod home;
@@ -25,5 +26,13 @@ pub fn router() -> Router<AppState> {
         )
         .route(SECURITY_PATH, get(account_security::show))
         .route(PASSWORD_PATH, put(account_security::update_password))
+        .route(
+            account_tokens::TOKENS_PATH,
+            get(account_tokens::index).post(account_tokens::store),
+        )
+        .route(
+            account_tokens::TOKEN_REVOKE_PATH,
+            post(account_tokens::revoke),
+        )
         .fallback(errors::not_found)
 }

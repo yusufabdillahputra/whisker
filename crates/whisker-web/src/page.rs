@@ -18,6 +18,18 @@ pub fn render_page<P: Serialize>(ctx: InertiaCtx, component: &'static str, props
     ctx.render(component, props).into_response()
 }
 
+/// Render page Inertia `200` dengan `encryptHistory: true` (props sensitif, mis. token polos
+/// sekali tampil: riwayat browser tak menyimpannya dalam bentuk terbaca).
+pub fn render_page_encrypted<P: Serialize>(
+    ctx: InertiaCtx,
+    component: &'static str,
+    props: P,
+) -> Response {
+    ctx.render(component, props)
+        .encrypt_history()
+        .into_response()
+}
+
 /// Render page Inertia dengan status HTTP tertentu (mis. `403`, `404`, `429`).
 pub fn render_page_status<P: Serialize>(
     ctx: InertiaCtx,
