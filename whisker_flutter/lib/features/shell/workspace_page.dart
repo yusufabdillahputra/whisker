@@ -8,6 +8,7 @@ import '../../data/providers.dart';
 import '../editor/editor_pane.dart';
 import '../hub_tree/hub_tree.dart';
 import '../inspector/inspector.dart';
+import '../local_sync/local_sync_panel.dart';
 import '../search/search_palette.dart';
 
 /// Lebar minimum layout tiga panel dan dua panel.
@@ -106,6 +107,16 @@ class _WorkspacePageState extends ConsumerState<WorkspacePage> {
   );
 
   Widget _layout(BuildContext context) {
+    // HubChange → perbarui clone lokal Hub ini (desktop).
+    ref.listen(hubWatchProvider(widget.hubId), (_, next) {
+      if (!next.hasValue || !localSyncSupported) return;
+      final hub = ref
+          .read(hubsProvider)
+          .value
+          ?.where((h) => h.id == widget.hubId)
+          .firstOrNull;
+      if (hub != null) ref.read(localSyncProvider.notifier).sync(hub);
+    });
     final colors = context.theme.colors;
     final hubs = ref.watch(hubsProvider).value ?? const [];
     final name =

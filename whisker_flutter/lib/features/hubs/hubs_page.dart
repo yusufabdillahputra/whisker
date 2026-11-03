@@ -8,6 +8,7 @@ import 'package:whisker_client/whisker_client.dart';
 import '../../app/app.dart';
 import '../../app/logo.dart';
 import '../../data/providers.dart';
+import '../local_sync/local_sync_panel.dart';
 
 /// Daftar Hub pengguna, tombol **Hub baru**, dan **Impor vault** per Hub.
 class HubsPage extends ConsumerWidget {
@@ -51,6 +52,8 @@ class HubsPage extends ConsumerWidget {
             : ListView(
                 children: [
                   for (final h in list) _HubTile(hub: h),
+                  if (localSyncSupported && !ref.watch(demoModeProvider))
+                    LocalSyncPanel(hubs: list),
                 ],
               ),
       ),
