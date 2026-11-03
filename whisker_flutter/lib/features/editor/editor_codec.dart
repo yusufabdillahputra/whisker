@@ -102,29 +102,95 @@ String _joinNodes(List<Node> nodes) {
   return b.toString();
 }
 
-/// Penanda list dan indentasi asli blok list.
-({String marker, String indent}) _listStyle(String source) {
-  final m = RegExp(r'^ {0,3}([-*+])[ \t]', multiLine: true).firstMatch(source);
+/// Gaya list asli: penanda bullet, penanda todo, delimiter list bernomor,
+/// dan unit indentasi (`null` bila sumber tidak punya baris bersarang).
+({String marker, String todoMarker, String delimiter, String? indent})
+_listStyle(String source) {
+  final bullet = RegExp(
+    r'^ {0,3}([-*+])[ \t](?!\[[ xX]\])',
+    multiLine: true,
+  ).firstMatch(source);
+  final todo = RegExp(
+    r'^[ \t]*([-*+])[ \t]\[[ xX]\]',
+    multiLine: true,
+  ).firstMatch(source);
+  final ordered = RegExp(
+    r'^[ \t]*\d+([.)])[ \t]',
+    multiLine: true,
+  ).firstMatch(source);
   final ind = RegExp(
     r'^([ \t]+)(?:[-*+]|\d+[.)])[ \t]',
     multiLine: true,
   ).firstMatch(source);
-  return (marker: m?.group(1) ?? '-', indent: ind?.group(1) ?? '  ');
+  final marker = bullet?.group(1) ?? todo?.group(1) ?? '-';
+  return (
+    marker: marker,
+    todoMarker: todo?.group(1) ?? marker,
+    delimiter: ordered?.group(1) ?? '.',
+    indent: ind?.group(1),
+  );
 }
 
-/// Mengembalikan penanda `*` dan indentasi tab appflowy ke gaya asli.
+final _todoLine = RegExp(r'^- (\[[ xX]\] )');
+final _bulletLine = RegExp(r'^\* ');
+final _orderedLine = RegExp(r'^(\d+)\. ');
+
+/// Mengembalikan penanda, delimiter, dan indentasi tab appflowy ke gaya
+/// asli. Tanpa unit indentasi di sumber, anak bersarang diindentasi selebar
+/// penanda induknya (CommonMark: 3 spasi di bawah `1.`).
 String _restoreList(String markdown, String source) {
   final style = _listStyle(_lf(source));
+  final start =
+      int.tryParse(
+        RegExp(
+              r'^[ \t]*(\d+)[.)]',
+              multiLine: true,
+            ).firstMatch(_lf(source))?.group(1) ??
+            '',
+      ) ??
+      1;
+  final contentOffset = <int>[];
+  final counters = <int, int>{};
   return markdown
       .split('\n')
       .map((line) {
-        final m = RegExp(r'^(\t*)\* (?!\[[ xX]\] )').firstMatch(line);
-        final lead = RegExp(r'^\t*').firstMatch(line)!.group(0)!;
-        final indent = style.indent * lead.length;
-        if (m != null) {
-          return '$indent${style.marker} ${line.substring(m.end)}';
+        final depth = RegExp(r'^\t*').firstMatch(line)!.group(0)!.length;
+        var rest = line.substring(depth);
+        counters.removeWhere((d, _) => d > depth);
+        if (_todoLine.hasMatch(rest) || _bulletLine.hasMatch(rest)) {
+          counters.remove(depth);
         }
-        return '$indent${line.substring(lead.length)}';
+        if (_todoLine.hasMatch(rest)) {
+          rest = '${style.todoMarker} ${rest.substring(2)}';
+        } else if (_bulletLine.hasMatch(rest)) {
+          rest = '${style.marker} ${rest.substring(2)}';
+        } else {
+          final m = _orderedLine.firstMatch(rest);
+          if (m != null) {
+            final n = counters[depth] ?? (depth == 0 ? start : 1);
+            counters[depth] = n + 1;
+            rest = '$n${style.delimiter} ${rest.substring(m.end)}';
+          } else {
+            counters.remove(depth);
+          }
+        }
+        final String indent;
+        if (depth == 0) {
+          indent = '';
+        } else if (style.indent != null) {
+          indent = style.indent! * depth;
+        } else {
+          final parent = depth - 1 < contentOffset.length
+              ? contentOffset[depth - 1]
+              : 2 * depth;
+          indent = ' ' * parent;
+        }
+        final marker = RegExp(r'^(?:[-*+]|\d+[.)]) ').firstMatch(rest);
+        if (contentOffset.length > depth) {
+          contentOffset.removeRange(depth, contentOffset.length);
+        }
+        contentOffset.add(indent.length + (marker?.end ?? 0));
+        return '$indent$rest';
       })
       .join('\n');
 }

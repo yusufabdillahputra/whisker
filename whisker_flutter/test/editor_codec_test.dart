@@ -118,4 +118,34 @@ void main() {
     e.delete(e.root.children.elementAt(1).path);
     expect(body(d, e), '# A\n\nakhir\n');
   });
+
+  test('todo_list_keeps_marker', () {
+    const s = '* [ ] satu\n* [x] dua\n';
+    final d = MdDocument.parse(s);
+    final e = editorDocumentFrom(d);
+    final todo = e.root.children.first;
+    expect(todo.type, 'todo_list');
+    setText(todo, 'satu diubah');
+    expect(body(d, e), '* [ ] satu diubah\n* [x] dua\n');
+  });
+
+  test('ordered_paren_delimiter_kept', () {
+    const s = '1) satu\n2) dua\n';
+    final d = MdDocument.parse(s);
+    final e = editorDocumentFrom(d);
+    final first = e.root.children.first;
+    expect(first.type, 'numbered_list');
+    setText(first, 'satu diubah');
+    expect(body(d, e), '1) satu diubah\n2) dua\n');
+  });
+
+  test('nested_under_ordered_uses_marker_width', () {
+    const s = '1. a\n2. b\n';
+    final d = MdDocument.parse(s);
+    final e = editorDocumentFrom(d);
+    final first = e.root.children.first;
+    e.insert([0, 0], [bulletedListNode(text: 'anak')]);
+    expect(first.children, hasLength(1));
+    expect(body(d, e), '1. a\n   - anak\n2. b\n');
+  });
 }
