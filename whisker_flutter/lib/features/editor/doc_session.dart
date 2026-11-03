@@ -73,6 +73,23 @@ class DocSessionNotifier extends Notifier<DocSession?> {
     );
   }
 
+  /// Membangun ulang editor dari isi sesi saat ini (mis. panel dibuka lagi
+  /// saat masih ada perubahan yang belum di-commit).
+  void resume() {
+    final s = state;
+    if (s == null) return;
+    final md = MdDocument.parse(s.content);
+    state = DocSession(
+      serverContent: s.serverContent,
+      baseSha: s.baseSha,
+      original: md,
+      frontmatter: md.frontmatter.raw,
+      body: md.frontmatter.body,
+      readOnlyReason: s.readOnlyReason,
+      generation: s.generation + 1,
+    );
+  }
+
   void setBody(String body) => state = state?.copyWith(body: body);
 
   void setFrontmatter(String raw) => state = state?.copyWith(frontmatter: raw);

@@ -38,17 +38,21 @@ void main() {
   testWidgets('readonly_banner_and_status_edit', (tester) async {
     final api = await pumpWhisker(tester, both(adr));
     expect(find.byKey(const Key('readonly-banner')), findsOneWidget);
-    final es = tester.state<EditorPaneState>(find.byType(EditorPane)).editorState!;
+    final es = tester
+        .state<EditorPaneState>(find.byType(EditorPane))
+        .editorState!;
     expect(es.editable, isFalse);
 
     bool commitEnabled() => tester
         .widget<Semantics>(
-          find.ancestor(
-            of: find.text('Commit changes'),
-            matching: find.byWidgetPredicate(
-              (w) => w is Semantics && w.properties.enabled != null,
-            ),
-          ).first,
+          find
+              .ancestor(
+                of: find.text('Commit changes'),
+                matching: find.byWidgetPredicate(
+                  (w) => w is Semantics && w.properties.enabled != null,
+                ),
+              )
+              .first,
         )
         .properties
         .enabled!;

@@ -6,9 +6,12 @@ import 'package:whisker_client/whisker_client.dart';
 
 Future<String> git(String dir, List<String> args) async {
   final r = await Process.run('git', [
-    '-c', 'user.name=Uji',
-    '-c', 'user.email=uji@contoh.test',
-    '-c', 'init.defaultBranch=main',
+    '-c',
+    'user.name=Uji',
+    '-c',
+    'user.email=uji@contoh.test',
+    '-c',
+    'init.defaultBranch=main',
     ...args,
   ], workingDirectory: dir);
   if (r.exitCode != 0) throw StateError('git $args: ${r.stderr}');

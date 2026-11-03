@@ -39,7 +39,10 @@ class EditorPaneState extends ConsumerState<EditorPane> {
   Timer? _draftTimer;
   int _builtGeneration = -1;
   bool _starting = false;
+  bool _remoteChanged = false;
   Object? _loadError;
+  late final DraftStore _store = ref.read(draftStoreProvider);
+  DocSession? _latest;
 
   DocKey get _key => (widget.hubId, widget.path);
   DocSessionNotifier get _session =>
@@ -48,13 +51,23 @@ class EditorPaneState extends ConsumerState<EditorPane> {
   @override
   void initState() {
     super.initState();
-    _start();
+    _store; // ditangkap agar dispose bisa menyimpan draf tanpa `ref`.
+    // Provider tidak boleh diubah selama initState.
+    Future.microtask(_start);
   }
 
-  /// Memuat isi server (dan draf bila ada) lalu memulai sesi.
-  Future<void> _start({bool ignoreDraft = false}) async {
+  /// Memuat isi server (dan draf bila ada) lalu memulai sesi. Sesi yang
+  /// masih berisi perubahan (panel ditutup lalu dibuka lagi) dilanjutkan,
+  /// kecuali [force].
+  Future<void> _start({bool ignoreDraft = false, bool force = false}) async {
     if (_starting) return;
+    final existing = ref.read(docSessionProvider(_key));
+    if (!force && existing != null && existing.dirty) {
+      _session.resume();
+      return;
+    }
     _starting = true;
+    _remoteChanged = false;
     try {
       ref.invalidate(docProvider(_key));
       final server = await ref.read(docProvider(_key).future);
@@ -90,7 +103,6 @@ class EditorPaneState extends ConsumerState<EditorPane> {
     final es = editorState;
     if (s == null || es == null) return;
     _session.setBody(bodyFromEditor(s.original, es.document));
-    _scheduleDraft();
   }
 
   void _scheduleDraft() {
@@ -99,9 +111,9 @@ class EditorPaneState extends ConsumerState<EditorPane> {
   }
 
   Future<void> _saveDraft() async {
-    final s = ref.read(docSessionProvider(_key));
+    final s = _latest;
     if (s == null) return;
-    final store = ref.read(draftStoreProvider);
+    final store = _store;
     if (s.dirty) {
       await store.save(widget.hubId, widget.path, s.content, s.baseSha);
     } else {
@@ -150,7 +162,7 @@ class EditorPaneState extends ConsumerState<EditorPane> {
         if (!mounted) return;
         if (choice == ConflictChoice.reload) {
           await ref.read(draftStoreProvider).clear(widget.hubId, widget.path);
-          await _start(ignoreDraft: true);
+          await _start(ignoreDraft: true, force: true);
         } else if (choice == ConflictChoice.keepDraft) {
           _session.rebase(result.latestSha, result.latestContent);
           await _saveDraft();
@@ -167,6 +179,8 @@ class EditorPaneState extends ConsumerState<EditorPane> {
 
   @override
   void dispose() {
+    // Simpan perubahan yang belum sempat melewati debounce.
+    if (_draftTimer?.isActive ?? false) unawaited(_saveDraft());
     _draftTimer?.cancel();
     _sub?.cancel();
     editorState?.dispose();
@@ -211,7 +225,28 @@ class EditorPaneState extends ConsumerState<EditorPane> {
 
   @override
   Widget build(BuildContext context) {
+    // Setiap perubahan isi (editor atau Properties) disimpan sebagai draf.
+    ref.listen(docSessionProvider(_key), (prev, next) {
+      _latest = next;
+      if (next != null && prev?.content != next.content) _scheduleDraft();
+    });
+    // Dokumen ini berubah di remote: muat ulang bila bersih, beri tahu bila
+    // ada draf.
+    ref.listen(hubWatchProvider(widget.hubId), (_, next) {
+      final change = next.value;
+      final s = ref.read(docSessionProvider(_key));
+      if (change == null || s == null || !change.paths.contains(widget.path)) {
+        return;
+      }
+      if (change.headSha == s.baseSha) return;
+      if (s.dirty) {
+        setState(() => _remoteChanged = true);
+      } else {
+        _start(force: true);
+      }
+    });
     final s = ref.watch(docSessionProvider(_key));
+    _latest = s;
     if (_loadError != null) {
       return Center(child: Text('Gagal membuka dokumen: $_loadError'));
     }
@@ -254,6 +289,35 @@ class EditorPaneState extends ConsumerState<EditorPane> {
             ],
           ),
         ),
+        if (_remoteChanged)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: FAlert(
+              key: const Key('remote-changed-banner'),
+              variant: FAlertVariant.destructive,
+              icon: const Icon(FLucideIcons.circleAlert),
+              title: const Text('Dokumen ini berubah di remote'),
+              subtitle: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                children: [
+                  const Text('Commit akan menampilkan konflik.'),
+                  FButton(
+                    variant: FButtonVariant.outline,
+                    size: FButtonSizeVariant.sm,
+                    mainAxisSize: MainAxisSize.min,
+                    onPress: () async {
+                      await ref
+                          .read(draftStoreProvider)
+                          .clear(widget.hubId, widget.path);
+                      await _start(ignoreDraft: true, force: true);
+                    },
+                    child: const Text('Muat ulang (buang draf)'),
+                  ),
+                ],
+              ),
+            ),
+          ),
         if (s.readOnlyReason != null)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
