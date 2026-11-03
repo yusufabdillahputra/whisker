@@ -59,3 +59,16 @@ paket DiceBear untuk Dart (bila tersedia untuk versi 10) atau render di server l
 - Logo **tidak** digambar ulang manual; ubah style JSON atau opsi di `render-logo.mjs`, lalu render.
 - Setelah render, cek `design/logo/preview.png` (dibuat ulang lewat screenshot) di latar terang dan gelap.
 - Style memuat atribusi di `meta`; lisensinya mengikuti lisensi repo (lihat [Tech Stack](Tech-Stack.md)).
+
+## Alternatif: style Lorelei
+
+![Pratinjau Lorelei](../design/logo/lorelei/preview.png)
+
+[Lorelei](https://www.dicebear.com/styles/lorelei/) karya Lisa Wischofsky berlisensi **CC0 1.0**
+(public domain, bebas untuk komersial tanpa atribusi). Whisker memakainya dengan palet calico: rambut
+oranye/hitam, garis `fur.950`, kulit `fur.50`, latar skala lembut calico. Konfigurasi di
+`design/tools/render-lorelei.mjs` (`npm run lorelei`), hasil di `design/logo/lorelei/`.
+
+Kandidat logo Lorelei: seed `Whisker`, rambut `ginger.500`, mulut `happy01`, bintik wajah oranye,
+tanpa jenggot/kacamata. **Logo resmi (calico atau Lorelei) belum diputuskan**; sampai diputuskan,
+`whisker-calico` tetap dipakai di README.
