@@ -40,7 +40,7 @@ commit (`feat:`, `fix:`, `docs:`, …).
 | `whisker_server/` | server Serverpod: endpoint, model `.spy.yaml`, migrasi, MCP endpoint |
 | `whisker_client/` | client Dart hasil generate Serverpod (**jangan diedit manual**) |
 | `whisker_flutter/` | aplikasi Flutter + Forui (Android, iOS, Web, macOS, Windows, Linux) |
-| `markdown_codec/` | paket Dart murni: parse/serialize markdown vault, dipakai server dan aplikasi |
+| `markdown_codec/` | paket Dart murni: parse/serialize markdown vault, dipakai server dan aplikasi (test: `cd markdown_codec && dart test`) |
 | `design/` | design token, style DiceBear, logo, dan tool desain |
 | `Guides/` | panduan detail tiap proses (baca sebelum mengerjakan proses itu) |
 | `docs/superpowers/` | spec (`specs/`) dan plan (`plans/`) hasil Superpowers |

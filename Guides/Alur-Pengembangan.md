@@ -30,6 +30,7 @@ Bug, test gagal, atau perilaku aneh: **selalu** mulai dari `superpowers:systemat
 
 | jenis perubahan | bukti minimum |
 | --- | --- |
+| codec | `cd markdown_codec && dart test && dart analyze` hijau; round-trip korpus nyata dengan `WHISKER_FIXTURE_VAULT=<path-vault>` |
 | server | `dart test` di `whisker_server/` hijau, migrasi ter-generate bila model berubah |
 | aplikasi | `flutter analyze` bersih, `flutter test` hijau |
 | UI | screenshot **light dan dark**, minimal satu ukuran ponsel dan satu desktop |
