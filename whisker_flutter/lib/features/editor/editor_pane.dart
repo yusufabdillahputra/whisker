@@ -40,6 +40,7 @@ class EditorPaneState extends ConsumerState<EditorPane> {
   int _builtGeneration = -1;
   bool _starting = false;
   bool _remoteChanged = false;
+  EditorSnapshot? _snapshot;
   Object? _loadError;
   late final DraftStore _store = ref.read(draftStoreProvider);
   DocSession? _latest;
@@ -93,7 +94,14 @@ class EditorPaneState extends ConsumerState<EditorPane> {
     editorState?.dispose();
     final es = EditorState(document: editorDocumentFrom(s.original));
     es.editable = s.readOnlyReason == null;
-    _sub = es.transactionStream.listen((_) => _onEdited());
+    _snapshot = snapshotOf(s.original);
+    // Hanya transaksi yang mengubah dokumen (bukan sekadar seleksi), sekali
+    // per transaksi.
+    _sub = es.transactionStream.listen((v) {
+      if (v.$1 == TransactionTime.after && v.$2.operations.isNotEmpty) {
+        _onEdited();
+      }
+    });
     editorState = es;
     _builtGeneration = s.generation;
   }
@@ -102,7 +110,9 @@ class EditorPaneState extends ConsumerState<EditorPane> {
     final s = ref.read(docSessionProvider(_key));
     final es = editorState;
     if (s == null || es == null) return;
-    _session.setBody(bodyFromEditor(s.original, es.document));
+    _session.setBody(
+      bodyFromEditor(s.original, es.document, snapshot: _snapshot),
+    );
   }
 
   void _scheduleDraft() {

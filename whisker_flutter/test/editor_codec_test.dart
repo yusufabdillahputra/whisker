@@ -148,4 +148,15 @@ void main() {
     expect(first.children, hasLength(1));
     expect(body(d, e), '1. a\n   - anak\n2. b\n');
   });
+
+  test('snapshot_reuse_matches_fresh', () {
+    const s = '# A\n\nsatu\n\n- x\n- y\n';
+    final d = MdDocument.parse(s);
+    final snap = snapshotOf(d);
+    final e = editorDocumentFrom(d);
+    expect(bodyFromEditor(d, e, snapshot: snap), s);
+    setText(e.root.children.elementAt(1), 'dua');
+    expect(bodyFromEditor(d, e, snapshot: snap), bodyFromEditor(d, e));
+    expect(bodyFromEditor(d, e, snapshot: snap), '# A\n\ndua\n\n- x\n- y\n');
+  });
 }

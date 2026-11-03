@@ -195,14 +195,32 @@ String _restoreList(String markdown, String source) {
       .join('\n');
 }
 
-/// Body markdown dari [edited]; kelompok node yang tidak berubah memakai teks
-/// asli sehingga dokumen tanpa edit byte-identik.
-String bodyFromEditor(MdDocument original, Document edited) {
-  final snapshot = editorDocumentFrom(original);
+/// Markdown per kelompok `wb` saat dokumen dimuat; dihitung sekali per
+/// dokumen asli lalu dipakai ulang di setiap ketikan.
+class EditorSnapshot {
+  final Map<int, String> groups;
+  const EditorSnapshot._(this.groups);
+}
+
+EditorSnapshot snapshotOf(MdDocument original) {
   final before = <int, String>{};
-  for (final g in _groups(snapshot.root.children.toList())) {
+  for (final g in _groups(
+    editorDocumentFrom(original).root.children.toList(),
+  )) {
     if (g.wb != null) before[g.wb!] = _joinNodes(g.nodes);
   }
+  return EditorSnapshot._(before);
+}
+
+/// Body markdown dari [edited]; kelompok node yang tidak berubah memakai teks
+/// asli sehingga dokumen tanpa edit byte-identik. Berikan [snapshot] (dari
+/// [snapshotOf]) agar dokumen asli tidak diproses ulang tiap panggilan.
+String bodyFromEditor(
+  MdDocument original,
+  Document edited, {
+  EditorSnapshot? snapshot,
+}) {
+  final before = (snapshot ?? snapshotOf(original)).groups;
 
   final pieces = <BodyPiece>[];
   final used = <int>{};
