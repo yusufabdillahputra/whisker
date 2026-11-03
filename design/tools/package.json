@@ -5,7 +5,7 @@
   "description": "Render logo & avatar Whisker dari style DiceBear kustom.",
   "scripts": {
     "logo": "node render-logo.mjs",
-    "lorelei": "node render-lorelei.mjs"
+    "critters": "node render-critters.mjs"
   },
   "dependencies": {
     "@dicebear/core": "10.7.0",

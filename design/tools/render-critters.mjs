@@ -1,35 +1,36 @@
-// Render logo & avatar Whisker dengan style "whisker-lorelei-cat":
-// kepala kucing calico + mata/alis/mulut dari DiceBear Lorelei (CC0 1.0, Lisa Wischofsky).
-// Pakai: cd design/tools && npm install && npm run lorelei
-// (bila style berubah: python3 build-lorelei-cat.py dulu)
+// Render logo & avatar Whisker dengan style "whisker-critters":
+// remix Critters (DiceBear, CC0 1.0) menjadi kucing calico.
+// Pakai: cd design/tools && npm install && npm run critters
+// (bila style berubah: python3 build-critters-cat.py dulu)
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { Avatar, Style } from '@dicebear/core';
 
 const root = new URL('../', import.meta.url);
-const definition = JSON.parse(readFileSync(new URL('dicebear/whisker-lorelei-cat.json', root), 'utf8'));
+const definition = JSON.parse(readFileSync(new URL('dicebear/whisker-critters.json', root), 'utf8'));
 const style = new Style(definition);
-const outDir = new URL('logo/lorelei/', root);
+const outDir = new URL('logo/critters/', root);
 mkdirSync(outDir, { recursive: true });
 
 // Kandidat logo: seed tetap + varian & warna terkunci.
 const logo = {
   seed: 'Whisker',
-  earsVariant: 'pointy',
-  patchesVariant: 'classic',
-  eyesVariant: 'variant04',
-  mouthVariant: 'happy06',
-  eyebrowsProbability: 0,
-  frecklesProbability: 0,
+  topVariant: 'earsPointy',
+  bodyVariant: 'round',
+  calicoVariant: 'classic',
+  eyesVariant: 'round',
+  mouthVariant: 'catMouth',
+  cheeksProbability: 0,
+  bodyColor: '#FEF9F4',
   patchAColor: '#F47806',
   patchBColor: '#221E1A',
   earLeftColor: '#F47806',
   earRightColor: '#221E1A',
-  noseColor: '#FA6786',
+  inkColor: '#221E1A',
 };
 const files = {
-  'whisker-lorelei-logo.svg': { ...logo, backgroundColor: '#FEEFE7', borderRadius: 22 },
-  'whisker-lorelei-logo-ginger.svg': { ...logo, backgroundColor: '#F47806', earLeftColor: '#FEA065', patchAColor: '#FEA065', borderRadius: 22 },
-  'whisker-lorelei-mark.svg': { ...logo, backgroundColor: '#00000000' },
+  'whisker-critters-logo.svg': { ...logo, backgroundColor: '#FEEFE7', borderRadius: 22 },
+  'whisker-critters-logo-ginger.svg': { ...logo, backgroundColor: '#F47806', patchAColor: '#FEA065', earLeftColor: '#FEA065', borderRadius: 22 },
+  'whisker-critters-mark.svg': { ...logo, backgroundColor: '#00000000' },
 };
 for (const [file, options] of Object.entries(files)) {
   writeFileSync(new URL(file, outDir), new Avatar(style, { ...options, title: 'Whisker' }).toString() + '\n');
@@ -37,7 +38,7 @@ for (const [file, options] of Object.entries(files)) {
 }
 
 // Contoh avatar pengguna: seed = id pengguna, varian & warna bebas.
-const seeds = ['yusuf', 'angkasa', 'serverpod', 'forui', 'calico', 'flutter', 'mochi', 'luna'];
+const seeds = ['yusuf', 'angkasa', 'serverpod', 'forui', 'calico', 'mochi', 'luna', 'oyen'];
 const row = seeds
   .map((seed, i) => `<image href="${new Avatar(style, { seed, borderRadius: 50 }).toDataUri()}" x="${i * 110}" y="0" width="100" height="100"/>`)
   .join('');
