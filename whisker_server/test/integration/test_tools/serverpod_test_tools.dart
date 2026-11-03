@@ -33,6 +33,7 @@ import 'package:whisker_server/src/generated/doc/dto/history_entry.dart'
 import 'package:whisker_server/src/generated/doc/dto/search_hit.dart'
     as _ij5ekrht;
 import 'package:whisker_server/src/generated/hub/hub.dart' as _i4ennidr;
+import 'package:whisker_server/src/generated/hub/hub_change.dart' as _ixdks84u;
 import 'package:whisker_server/src/generated/protocol.dart';
 import 'package:whisker_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -1011,5 +1012,37 @@ class _HubEndpoint {
         await _localUniqueSession.close();
       }
     });
+  }
+
+  _ida.Stream<_ixdks84u.HubChange> watch(
+    _ist.TestSessionBuilder sessionBuilder,
+    int hubId,
+  ) {
+    var _localTestStreamManager = _ist.TestStreamManager<_ixdks84u.HubChange>();
+    _ist.callStreamFunctionAndHandleExceptions(
+      () async {
+        var _localUniqueSession =
+            (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+              endpoint: 'hub',
+              method: 'watch',
+            );
+        var _localCallContext = await _endpointDispatch
+            .getMethodStreamCallContext(
+              createSessionCallback: (_) => _localUniqueSession,
+              endpointPath: 'hub',
+              methodName: 'watch',
+              arguments: {'hubId': hubId},
+              requestedInputStreams: [],
+              serializationManager: _serializationManager,
+            );
+        await _localTestStreamManager.callStreamMethod(
+          _localCallContext,
+          _localUniqueSession,
+          {},
+        );
+      },
+      _localTestStreamManager.outputStreamController,
+    );
+    return _localTestStreamManager.outputStreamController.stream;
   }
 }

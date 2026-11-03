@@ -4,6 +4,7 @@ import 'package:serverpod/serverpod.dart';
 
 import '../generated/protocol.dart';
 import '../index/indexer.dart';
+import '../sync/hub_events.dart';
 import 'hub_service.dart';
 import 'vault_import.dart';
 
@@ -97,7 +98,11 @@ class HubEndpoint extends Endpoint {
         await repo.resetHard('origin/${hub.defaultBranch}');
         throw WhiskerException(message: 'Push impor vault gagal.');
       }
-      await indexHub(session, hub, repo);
+      final paths = await indexHub(session, hub, repo);
+      await broadcastChange(
+        session,
+        HubChange(hubId: hubId, headSha: (await repo.head())!, paths: paths),
+      );
       return (await Hub.db.findById(session, hubId))!;
     });
   }
@@ -109,6 +114,12 @@ class HubEndpoint extends Endpoint {
       await indexHub(session, hub, await _svc.repoFor(hub));
       return (await Hub.db.findById(session, hubId))!;
     });
+  }
+
+  /// Aliran perubahan Hub (commit dari aplikasi, push dari PC).
+  Stream<HubChange> watch(Session session, int hubId) async* {
+    await _svc.requireMember(session, hubId);
+    yield* session.messages.createStream<HubChange>(hubChannel(hubId));
   }
 
   Future<String> _uniqueSlug(Session session, String name) async {

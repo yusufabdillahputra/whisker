@@ -589,6 +589,27 @@ class Endpoints extends _is.EndpointDispatch {
                 params['hubId'],
               ),
         ),
+        'watch': _is.MethodStreamConnector(
+          name: 'watch',
+          params: {
+            'hubId': _is.ParameterDescription(
+              name: 'hubId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          streamParams: {},
+          returnType: _is.MethodStreamReturnType.streamType,
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+                Map<String, Stream> streamParams,
+              ) => (endpoints['hub'] as _ix5pbm3r.HubEndpoint).watch(
+                session,
+                params['hubId'],
+              ),
+        ),
       },
     );
     modules['serverpod_auth_idp'] = _iais.Endpoints()

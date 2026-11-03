@@ -25,3 +25,4 @@ hub:
   - create:
   - importVault:
   - reindex:
+  - watch:

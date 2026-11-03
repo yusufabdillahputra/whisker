@@ -31,6 +31,7 @@ import 'package:whisker_client/src/protocol/doc/dto/history_entry.dart'
 import 'package:whisker_client/src/protocol/doc/dto/search_hit.dart'
     as _ioseiyuf;
 import 'package:whisker_client/src/protocol/hub/hub.dart' as _izxm48xu;
+import 'package:whisker_client/src/protocol/hub/hub_change.dart' as _icpwlufq;
 import 'protocol.dart' as _il2as5qe;
 
 /// By extending [EmailOtpIdpBaseEndpoint], the email identity provider
@@ -492,6 +493,18 @@ class EndpointHub extends _isc.EndpointRef {
         'hub',
         'reindex',
         {'hubId': hubId},
+      );
+
+  /// Aliran perubahan Hub (commit dari aplikasi, push dari PC).
+  _ida.Stream<_icpwlufq.HubChange> watch(int hubId) =>
+      caller.callStreamingServerEndpoint<
+        _ida.Stream<_icpwlufq.HubChange>,
+        _icpwlufq.HubChange
+      >(
+        'hub',
+        'watch',
+        {'hubId': hubId},
+        {},
       );
 }
 
