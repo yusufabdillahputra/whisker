@@ -1,11 +1,14 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:whisker/features/shell/workspace_page.dart';
 
 import 'helpers.dart';
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   testWidgets('layout_breakpoints', (tester) async {
     const page = WorkspacePage(hubId: 1, docPath: 'README.md');
 

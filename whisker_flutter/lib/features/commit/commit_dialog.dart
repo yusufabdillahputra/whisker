@@ -92,8 +92,9 @@ Future<CommitResult?> showCommitDialog(
                                       : message.text.trim(),
                                   d.isEmpty ? null : d,
                                 );
-                                if (context.mounted)
+                                if (context.mounted) {
                                   Navigator.of(context).pop(r);
+                                }
                               } catch (e) {
                                 setState(() {
                                   busy = false;
