@@ -4,5 +4,7 @@
 /// byte-identik dengan aslinya.
 library;
 
+export 'src/frontmatter.dart';
+
 /// Versi paket.
 const markdownCodecVersion = '0.1.0';
