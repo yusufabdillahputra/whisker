@@ -5,6 +5,7 @@
 library;
 
 export 'src/block.dart';
+export 'src/classify.dart';
 export 'src/document.dart';
 export 'src/extract.dart';
 export 'src/frontmatter.dart';
