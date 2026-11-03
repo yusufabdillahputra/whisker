@@ -37,6 +37,11 @@ class LocalSyncState {
   );
 }
 
+/// Pembuat [LocalSync] per folder induk (diganti di test).
+final localSyncFactoryProvider = Provider<LocalSync Function(String root)>(
+  (ref) => LocalSync.new,
+);
+
 /// Folder induk clone lokal + status sinkron per Hub.
 class LocalSyncController extends Notifier<LocalSyncState> {
   @override
@@ -57,18 +62,26 @@ class LocalSyncController extends Notifier<LocalSyncState> {
     state = LocalSyncState(root: root);
   }
 
-  /// Menyinkronkan [hub] bila folder induk sudah dipilih dan tidak sedang
-  /// berjalan untuk Hub itu.
+  /// Hub yang menerima perubahan saat sinkronnya masih berjalan.
+  final _rerun = <int>{};
+
+  /// Menyinkronkan [hub]; permintaan yang datang saat sinkron Hub itu masih
+  /// berjalan dijalankan sekali lagi setelahnya, agar clone tidak tertinggal.
   Future<void> sync(Hub hub) async {
     final root = state.root;
     final id = hub.id!;
-    if (root == null || state.running.contains(id)) return;
+    if (root == null) return;
+    if (state.running.contains(id)) {
+      _rerun.add(id);
+      return;
+    }
     state = state.copyWith(running: {...state.running, id});
-    final status = await LocalSync(root).syncHub(hub);
+    final status = await ref.read(localSyncFactoryProvider)(root).syncHub(hub);
     state = state.copyWith(
       statuses: {...state.statuses, id: status},
       running: {...state.running}..remove(id),
     );
+    if (_rerun.remove(id)) await sync(hub);
   }
 
   Future<void> syncAll(List<Hub> hubs) async {

@@ -1,7 +1,12 @@
+import 'dart:async';
 import 'dart:io';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:whisker/features/local_sync/local_sync.dart';
+import 'package:whisker/features/local_sync/local_sync_panel.dart';
 import 'package:whisker_client/whisker_client.dart';
 
 Future<String> git(String dir, List<String> args) async {
@@ -43,6 +48,8 @@ Hub hubAt(String remote) => Hub(
 );
 
 void main() {
+  queueTests();
+
   test('clones_then_fast_forwards', () async {
     final r = await setUpRemote();
     final root = await Directory.systemTemp.createTemp('whisker-root-');
@@ -98,5 +105,51 @@ void main() {
     await Directory('${root.path}/uji').create();
     final s = await LocalSync(root.path).syncHub(hubAt('/tidak/ada'));
     expect(s.state, SyncState.error);
+  });
+}
+
+class _GatedSync extends LocalSync {
+  _GatedSync() : super('/tidak-dipakai');
+  final gates = <Completer<void>>[];
+
+  @override
+  Future<SyncStatus> syncHub(Hub hub) async {
+    final g = Completer<void>();
+    gates.add(g);
+    await g.future;
+    return const SyncStatus(SyncState.upToDate);
+  }
+}
+
+void queueTests() {
+  test('unsafe_slug_rejected', () async {
+    final root = await Directory.systemTemp.createTemp('whisker-root-');
+    addTearDown(() => root.delete(recursive: true));
+    final hub = hubAt('/tidak/ada').copyWith(slug: '..');
+    final s = await LocalSync(root.path).syncHub(hub);
+    expect(s.state, SyncState.error);
+  });
+
+  test('change_during_sync_is_queued', () async {
+    SharedPreferences.setMockInitialValues({'whisker.localRoot': '/x'});
+    final fake = _GatedSync();
+    final c = ProviderContainer(
+      overrides: [localSyncFactoryProvider.overrideWithValue((_) => fake)],
+    );
+    addTearDown(c.dispose);
+    final ctl = c.read(localSyncProvider.notifier);
+    await c.read(localSyncProvider.notifier).setRoot('/x');
+    final hub = hubAt('/r');
+    final first = ctl.sync(hub);
+    await Future<void>.delayed(Duration.zero);
+    unawaited(ctl.sync(hub)); // HubChange saat sinkron berjalan
+    expect(fake.gates, hasLength(1));
+    fake.gates.first.complete();
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(fake.gates, hasLength(2));
+    fake.gates.last.complete();
+    await first;
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(c.read(localSyncProvider).running, isEmpty);
   });
 }

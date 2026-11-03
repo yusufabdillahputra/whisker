@@ -33,6 +33,9 @@ class LocalSync {
   Future<SyncStatus> syncHub(Hub hub) async {
     final dir = dirFor(hub);
     try {
+      if (!RegExp(r'^[a-z0-9][a-z0-9-]*$').hasMatch(hub.slug)) {
+        return const SyncStatus(SyncState.error, 'Slug Hub tidak valid.');
+      }
       if (hub.remoteUrl.startsWith('-')) {
         return const SyncStatus(SyncState.error, 'URL remote tidak valid.');
       }
