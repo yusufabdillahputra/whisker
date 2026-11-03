@@ -45,4 +45,13 @@ void main() {
     expect(s.raw, '');
     expect(s.body, input);
   });
+
+  test('bom_before_frontmatter', () {
+    const s = '\uFEFF---\ntags: [a]\n---\nx\n';
+    final fm = splitFrontmatter(s);
+    expect(fm.data, {
+      'tags': ['a'],
+    });
+    expect(fm.raw + fm.body, s);
+  });
 }

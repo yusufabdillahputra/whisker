@@ -97,4 +97,17 @@ void main() {
     expect(edited.source, '> [!note] Catatan\n> Baris A\n> Baris B\n');
     expect(edited.edited, isTrue);
   });
+
+  test('edit_fence_with_inner_fence_keeps_structure', () {
+    final doc = MdDocument.parse('```\nx\n```\nafter\n');
+    final out = doc
+        .replaceBlock(0, MdBlock.edit(doc.blocks[0], 'a\n```\nb'))
+        .serialize();
+    final again = MdDocument.parse(out);
+    expect(again.blocks.map((b) => b.kind), [
+      MdBlockKind.fence,
+      MdBlockKind.paragraph,
+    ]);
+    expect(again.blocks.first.text, 'a\n```\nb');
+  });
 }

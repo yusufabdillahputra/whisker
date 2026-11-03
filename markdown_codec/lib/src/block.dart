@@ -56,10 +56,25 @@ class MdBlock {
       case MdBlockKind.heading:
         out = '${'#' * original.level!} ${body.join(' ')}$tail';
       case MdBlockKind.fence:
-        final open = lines.first.content;
+        var open = lines.first.content;
         final hasClose =
             lines.length > 1 && _isFenceClose(open, lines.last.content);
-        final parts = [open, ...body, if (hasClose) lines.last.content];
+        var close = hasClose ? lines.last.content : '';
+        // Panjangkan pagar bila isi baru memuat baris pagar yang bisa
+        // menutupnya lebih awal.
+        final marker = _fenceOpen.firstMatch(open)!.group(1)!;
+        final run = RegExp('^ {0,3}(${RegExp.escape(marker[0])}{3,})');
+        var longest = 0;
+        for (final l in body) {
+          final n = run.firstMatch(l)?.group(1)!.length ?? 0;
+          if (n > longest) longest = n;
+        }
+        if (longest >= marker.length) {
+          final longer = marker[0] * (longest + 1);
+          open = open.replaceFirst(marker, longer);
+          if (hasClose) close = close.replaceFirst(marker, longer);
+        }
+        final parts = [open, ...body, if (hasClose) close];
         out = parts.join(nl) + (hasClose ? tail : nl);
       case MdBlockKind.callout:
         out = [lines.first.content, ...body.map(_quote)].join(nl) + tail;
@@ -68,7 +83,6 @@ class MdBlock {
       default:
         out = body.join(nl) + tail;
     }
-    if (out.isNotEmpty && !out.endsWith('\n') && tail.isNotEmpty) out += tail;
     return MdBlock(
       kind: original.kind,
       source: out,

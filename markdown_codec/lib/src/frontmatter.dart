@@ -31,7 +31,7 @@ String detectNewline(String input) {
   return i > 0 && input[i - 1] == '\r' ? '\r\n' : '\n';
 }
 
-final _open = RegExp(r'^---\r?\n');
+final _open = RegExp('^\uFEFF?---\\r?\\n');
 final _close = RegExp(r'^---\r?$', multiLine: true);
 
 /// Memisahkan frontmatter YAML di awal [input] tanpa mengubah teksnya.
