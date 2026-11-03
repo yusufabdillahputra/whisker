@@ -11,15 +11,15 @@ void main() {
     setUp(() => session = sessionBuilder.build());
 
     HubDocument doc(int hubId, String path) => HubDocument(
-          hubId: hubId,
-          path: path,
-          title: 'A',
-          area: 'knowledge',
-          frontmatter: '{}',
-          tags: ['x'],
-          blobSha: 'abc',
-          updatedAt: DateTime.now().toUtc(),
-        );
+      hubId: hubId,
+      path: path,
+      title: 'A',
+      area: 'knowledge',
+      frontmatter: '{}',
+      tags: ['x'],
+      blobSha: 'abc',
+      updatedAt: DateTime.now().toUtc(),
+    );
 
     test('hub, member, dan dokumen tersimpan', () async {
       final owner = const Uuid().v4obj();
