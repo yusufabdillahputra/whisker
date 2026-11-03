@@ -1,0 +1,13 @@
+{
+  "name": "whisker-design-tools",
+  "private": true,
+  "type": "module",
+  "description": "Render logo & avatar Whisker dari style DiceBear kustom.",
+  "scripts": {
+    "logo": "node render-logo.mjs"
+  },
+  "dependencies": {
+    "@dicebear/core": "10.7.0",
+    "@dicebear/styles": "10.6.0"
+  }
+}

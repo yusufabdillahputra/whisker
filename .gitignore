@@ -1,0 +1,23 @@
+# OS & editor
+.DS_Store
+.idea/
+.vscode/
+
+# Env & rahasia — JANGAN commit
+.env
+.env.*
+!.env.example
+**/config/passwords.yaml
+
+# Dart / Flutter
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+
+# Node (tooling desain)
+node_modules/
+
+# Claude Code — setting lokal per-mesin
+.claude/settings.local.json
