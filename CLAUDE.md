@@ -51,7 +51,7 @@ commit (`feat:`, `fix:`, `docs:`, …).
 - **Rahasia tidak pernah di-commit** (`config/passwords.yaml`, `.env`, token MCP).
 - **Warna hanya dari token.** Jangan menulis hex di widget; pakai `context.theme.colors` dan token di
   `design/tokens/whisker.tokens.json`. Ubah token → jalankan `python3 design/tools/check-contrast.py`.
-- **Logo dan avatar hanya dari style DiceBear** `design/dicebear/whisker-calico.json`; jangan
+- **Logo dan avatar hanya dari style DiceBear** `design/dicebear/whisker-critters.json` (remix Critters); jangan
   menggambar ulang manual.
 - **Git:** kerja di branch fitur, commit kecil dengan prefix Conventional Commits, masuk `main` lewat PR
   yang lolos CI.

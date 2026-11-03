@@ -20,7 +20,7 @@ guide ini diperbarui.
 | UI kit | [Forui](https://forui.dev/docs) (gaya shadcn/ui, 50+ widget, prefix `F`) | `forui` 0.27.x |
 | Server | [Serverpod](https://docs.serverpod.dev/) (endpoint Dart, model YAML, ORM, auth, stream, future call) | 4.1.x |
 | Database | PostgreSQL (embedded saat dev oleh `serverpod start`) | ≥ 16 |
-| Avatar & logo | [DiceBear](https://www.dicebear.com/) dengan style kustom `whisker-calico` | `@dicebear/core` 10.x |
+| Avatar & logo | [DiceBear](https://www.dicebear.com/) dengan style `whisker-critters` (remix Critters, CC0) | `@dicebear/core` 10.x |
 | Integrasi AI | MCP server di Whisker + plugin Claude Code di `whisker-plugins` | spesifikasi MCP Streamable HTTP |
 | CI & release | GitHub Actions | lihat [CI dan Release](CI-Release.md) |
 | Proses kerja | Superpowers | lihat [Alur Pengembangan](Alur-Pengembangan.md) |
