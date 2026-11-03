@@ -25,17 +25,21 @@ guide ini diperbarui.
 | CI & release | GitHub Actions | lihat [CI dan Release](CI-Release.md) |
 | Proses kerja | Superpowers | lihat [Alur Pengembangan](Alur-Pengembangan.md) |
 
-## Perlu diputuskan
+## Diputuskan saat brainstorming (2026-11-03)
 
-1. **State management dan routing Flutter**: mis. Riverpod / Bloc / `forui_hooks`, dan `go_router`.
-2. **Penyimpanan dokumen**: markdown di kolom Postgres saja, atau file di object storage (Serverpod
-   mendukung S3/GCS/database).
-3. **Pencarian**: full-text Postgres, `pgvector` untuk semantic search, atau keduanya.
-4. **Editor markdown** di aplikasi (wikilink, frontmatter, Mermaid) dan rendering lintas platform.
-5. **Offline & sinkronisasi**: database lokal Serverpod (SQLite) di klien atau online-only dulu.
-6. **Auth**: provider yang diaktifkan (email, Google, GitHub, passkey) dan format personal access
-   token untuk MCP.
-7. **Hosting**: Serverpod Cloud atau self-host (Docker).
-8. **Extension / plugin lintas platform**: **menunggu masukan dari agent Retail** (daftar package
-   Flutter per platform yang perlu disiapkan). Jangan memilih sendiri sebelum daftar itu ada.
-9. **Lisensi repo `whisker`**: `whisker-plugins` memakai AGPL-3.0-only; repo aplikasi belum punya lisensi.
+Detail dan alasannya ada di `docs/superpowers/specs/2026-11-03-whisker-inti-hub-design.md`.
+
+| topik | pilihan |
+| --- | --- |
+| State & routing | Riverpod + `go_router` |
+| Editor | `appflowy_editor` + codec markdown Whisker (round-trip byte-identik) |
+| Sumber kebenaran | Git-first: satu repo GitHub private per Hub; Postgres = indeks |
+| Auth | login GitHub + GitHub App "Whisker" |
+| Pencarian | full-text Postgres (semantic search menyusul di sub-proyek MCP) |
+| Hosting | Docker di Cloud VPS IDCloudHost |
+| Backup | `.zip` harian ke Object Storage IDCloudHost (S3-compatible), retensi 7 hari |
+
+## Masih terbuka
+
+1. **Extension / plugin lintas platform**: **menunggu masukan dari agent Retail**.
+2. **Lisensi repo `whisker`**: `whisker-plugins` memakai AGPL-3.0-only; repo aplikasi belum punya lisensi.

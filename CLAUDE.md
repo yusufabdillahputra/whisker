@@ -7,8 +7,8 @@ Contoh nyata isi sebuah Hub adalah vault `wiki-angkasa` (lihat [Konsep Hub](Guid
 MCP client seperti Claude Code mengakses Whisker lewat plugin di
 [`whisker-plugins`](https://github.com/yusufabdillahputra/whisker-plugins).
 
-> **Status: pra-implementasi.** Repo baru berisi panduan, design token, dan logo. Tech stack detail,
-> alur pengembangan, dan desain UI masih dibahas bersama user sebelum kode pertama ditulis.
+> **Status: pra-implementasi.** Desain sub-proyek 1 (Inti Hub) ada di
+> `docs/superpowers/specs/2026-11-03-whisker-inti-hub-design.md`. Sumber kebenaran Hub = repo git.
 
 ## Prinsip kerja
 
@@ -40,6 +40,7 @@ commit (`feat:`, `fix:`, `docs:`, …).
 | `whisker_server/` | server Serverpod: endpoint, model `.spy.yaml`, migrasi, MCP endpoint |
 | `whisker_client/` | client Dart hasil generate Serverpod (**jangan diedit manual**) |
 | `whisker_flutter/` | aplikasi Flutter + Forui (Android, iOS, Web, macOS, Windows, Linux) |
+| `markdown_codec/` | paket Dart murni: parse/serialize markdown vault, dipakai server dan aplikasi |
 | `design/` | design token, style DiceBear, logo, dan tool desain |
 | `Guides/` | panduan detail tiap proses (baca sebelum mengerjakan proses itu) |
 | `docs/superpowers/` | spec (`specs/`) dan plan (`plans/`) hasil Superpowers |
