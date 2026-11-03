@@ -9,6 +9,7 @@ export 'src/classify.dart';
 export 'src/document.dart';
 export 'src/extract.dart';
 export 'src/frontmatter.dart';
+export 'src/rules.dart';
 
 /// Versi paket.
 const markdownCodecVersion = '0.1.0';
