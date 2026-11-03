@@ -34,6 +34,7 @@ void main() async {
           AuthGate(
             listenable: client.auth.authInfoListenable,
             isSignedIn: () => client.auth.isAuthenticated,
+            signOut: () => client.auth.signOutDevice(),
           ),
         ),
       ],

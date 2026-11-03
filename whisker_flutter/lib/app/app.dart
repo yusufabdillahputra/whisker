@@ -13,7 +13,12 @@ import 'theme.dart';
 class AuthGate {
   final Listenable listenable;
   final bool Function() isSignedIn;
-  const AuthGate({required this.listenable, required this.isSignedIn});
+  final Future<void> Function()? signOut;
+  const AuthGate({
+    required this.listenable,
+    required this.isSignedIn,
+    this.signOut,
+  });
 }
 
 final authGateProvider = Provider<AuthGate?>((ref) => null);
