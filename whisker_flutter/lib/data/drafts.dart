@@ -7,7 +7,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 class Draft {
   final String content;
   final String? baseSha;
-  const Draft(this.content, this.baseSha);
+
+  /// Isi server saat draf mulai dibuat; beda dengan isi server sekarang
+  /// berarti draf berasal dari versi lama.
+  final String? baseContent;
+  const Draft(this.content, this.baseSha, {this.baseContent});
 }
 
 /// Draf per (`hubId`, `path`) di `shared_preferences`; tetap ada saat
@@ -19,12 +23,17 @@ class DraftStore {
     int hubId,
     String path,
     String content,
-    String? baseSha,
-  ) async {
+    String? baseSha, {
+    String? baseContent,
+  }) async {
     final p = await SharedPreferences.getInstance();
     await p.setString(
       _key(hubId, path),
-      jsonEncode({'content': content, 'baseSha': baseSha}),
+      jsonEncode({
+        'content': content,
+        'baseSha': baseSha,
+        'baseContent': baseContent,
+      }),
     );
   }
 
@@ -33,7 +42,11 @@ class DraftStore {
     final raw = p.getString(_key(hubId, path));
     if (raw == null) return null;
     final m = jsonDecode(raw) as Map<String, dynamic>;
-    return Draft(m['content'] as String, m['baseSha'] as String?);
+    return Draft(
+      m['content'] as String,
+      m['baseSha'] as String?,
+      baseContent: m['baseContent'] as String?,
+    );
   }
 
   Future<void> clear(int hubId, String path) async {

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:whisker/data/drafts.dart';
+import 'package:whisker/data/fake_api.dart';
 import 'package:whisker/features/editor/doc_session.dart';
 import 'package:whisker/features/editor/editor_pane.dart';
 
@@ -101,6 +102,31 @@ void main() {
   });
 
   lifecycleTests();
+
+  testWidgets('stale_draft_warned', (tester) async {
+    await DraftStore().save(
+      1,
+      'README.md',
+      '# Draf lama\n',
+      'v1',
+      baseContent: '# Versi lama\n',
+    );
+    await pumpWhisker(tester, const EditorPane(hubId: 1, path: 'README.md'));
+    expect(find.byKey(const Key('stale-draft-banner')), findsOneWidget);
+  });
+
+  testWidgets('fresh_draft_not_warned', (tester) async {
+    final server = sampleFiles['README.md']!;
+    await DraftStore().save(
+      1,
+      'README.md',
+      '# Draf baru\n',
+      'v1',
+      baseContent: server,
+    );
+    await pumpWhisker(tester, const EditorPane(hubId: 1, path: 'README.md'));
+    expect(find.byKey(const Key('stale-draft-banner')), findsNothing);
+  });
 
   testWidgets('restores_draft_on_open', (tester) async {
     await DraftStore().save(1, 'README.md', '# Draf lama\n', 'v1');

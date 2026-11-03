@@ -40,6 +40,7 @@ class EditorPaneState extends ConsumerState<EditorPane> {
   int _builtGeneration = -1;
   bool _starting = false;
   bool _remoteChanged = false;
+  bool _staleDraft = false;
   EditorSnapshot? _snapshot;
   Object? _loadError;
   late final DraftStore _store = ref.read(draftStoreProvider);
@@ -76,6 +77,11 @@ class EditorPaneState extends ConsumerState<EditorPane> {
           ? null
           : await ref.read(draftStoreProvider).load(widget.hubId, widget.path);
       if (!mounted) return;
+      _staleDraft =
+          draft != null &&
+          draft.content != server.content &&
+          draft.baseContent != null &&
+          draft.baseContent != server.content;
       _session.start(
         server,
         draftContent: draft?.content == server.content ? null : draft?.content,
@@ -125,7 +131,13 @@ class EditorPaneState extends ConsumerState<EditorPane> {
     if (s == null) return;
     final store = _store;
     if (s.dirty) {
-      await store.save(widget.hubId, widget.path, s.content, s.baseSha);
+      await store.save(
+        widget.hubId,
+        widget.path,
+        s.content,
+        s.baseSha,
+        baseContent: s.serverContent,
+      );
     } else {
       await store.clear(widget.hubId, widget.path);
     }
@@ -299,6 +311,19 @@ class EditorPaneState extends ConsumerState<EditorPane> {
             ],
           ),
         ),
+        if (_staleDraft && s.dirty)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: FAlert(
+              key: Key('stale-draft-banner'),
+              icon: Icon(FLucideIcons.history),
+              title: Text('Draf dibuat dari versi lama'),
+              subtitle: Text(
+                'Dokumen sudah berubah sejak drafmu dibuat. Commit akan '
+                'menampilkan konflik agar kamu bisa memilih.',
+              ),
+            ),
+          ),
         if (_remoteChanged)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
