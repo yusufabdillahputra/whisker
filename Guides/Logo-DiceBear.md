@@ -60,15 +60,27 @@ paket DiceBear untuk Dart (bila tersedia untuk versi 10) atau render di server l
 - Setelah render, cek `design/logo/preview.png` (dibuat ulang lewat screenshot) di latar terang dan gelap.
 - Style memuat atribusi di `meta`; lisensinya mengikuti lisensi repo (lihat [Tech Stack](Tech-Stack.md)).
 
-## Alternatif: style Lorelei
+## Alternatif: kucing gaya Lorelei
 
-![Pratinjau Lorelei](../design/logo/lorelei/preview.png)
+![Pratinjau kucing Lorelei](../design/logo/lorelei/preview.png)
 
 [Lorelei](https://www.dicebear.com/styles/lorelei/) karya Lisa Wischofsky berlisensi **CC0 1.0**
-(public domain, bebas untuk komersial tanpa atribusi). Whisker memakainya dengan palet calico: rambut
-oranye/hitam, garis `fur.950`, kulit `fur.50`, latar skala lembut calico. Konfigurasi di
-`design/tools/render-lorelei.mjs` (`npm run lorelei`), hasil di `design/logo/lorelei/`.
+(public domain, bebas dipakai komersial dan di-remix tanpa atribusi). Lorelei aslinya wajah manusia,
+jadi Whisker me-*remix*-nya menjadi style `design/dicebear/whisker-lorelei-cat.json`:
 
-Kandidat logo Lorelei: seed `Whisker`, rambut `ginger.500`, mulut `happy01`, bintik wajah oranye,
-tanpa jenggot/kacamata. **Logo resmi (calico atau Lorelei) belum diputuskan**; sampai diputuskan,
+- **diambil dari Lorelei:** komponen `eyes` (24 varian), `eyebrows`, `mouth` (hanya varian `happy*`),
+  `freckles`, beserta gaya garis hitamnya;
+- **dibuat Whisker:** kepala kucing, `ears` (`pointy`, `tilted`), `patches` calico (`classic`, `mask`,
+  `splash`), hidung kucing, dan kumis.
+
+Style ini **dibangun oleh skrip**, jangan diedit manual:
+
+```bash
+cd design/tools && npm install
+python3 build-lorelei-cat.py   # tulis ulang design/dicebear/whisker-lorelei-cat.json
+npm run lorelei                # render design/logo/lorelei/
+```
+
+Kandidat logo: seed `Whisker`, `pointy` + `classic`, mata `variant04`, mulut `happy06`, tanpa alis dan
+bintik. **Logo resmi (`whisker-calico` atau kucing Lorelei) belum diputuskan**; sampai diputuskan,
 `whisker-calico` tetap dipakai di README.
