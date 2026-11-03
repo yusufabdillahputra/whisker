@@ -25,6 +25,8 @@ dev_dependencies:
   lints: '>=3.0.0 <7.0.0'
   serverpod_test: 4.1.0
   test: ^1.25.5
+  whisker_client:
+    path: ../whisker_client
 
 serverpod:
   scripts:

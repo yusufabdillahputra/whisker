@@ -7,8 +7,9 @@ Contoh nyata isi sebuah Hub adalah vault `wiki-angkasa` (lihat [Konsep Hub](Guid
 MCP client seperti Claude Code mengakses Whisker lewat plugin di
 [`whisker-plugins`](https://github.com/yusufabdillahputra/whisker-plugins).
 
-> **Status: pra-implementasi.** Desain sub-proyek 1 (Inti Hub) ada di
-> `docs/superpowers/specs/2026-11-03-whisker-inti-hub-design.md`. Sumber kebenaran Hub = repo git.
+> **Status: sub-proyek 1 (Inti Hub) terimplementasi**: `markdown_codec`, server Serverpod, dan aplikasi
+> Flutter. Spec di `docs/superpowers/specs/2026-11-03-whisker-inti-hub-design.md`, screenshot di
+> `docs/screenshots/`. Sumber kebenaran Hub = repo git.
 
 ## Prinsip kerja
 
