@@ -1,0 +1,13 @@
+### Wikilink dari satu dokumen ke target (path/nama), resolusi opsional.
+class: DocumentLink
+table: document_link
+fields:
+  fromDocId: int
+  hubId: int
+  toPath: String
+  toDocId: int?
+indexes:
+  document_link_from_idx:
+    fields: fromDocId
+  document_link_to_idx:
+    fields: toDocId

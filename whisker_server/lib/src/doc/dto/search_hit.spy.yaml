@@ -1,0 +1,6 @@
+class: SearchHit
+fields:
+  path: String
+  title: String
+  snippet: String
+  rank: double

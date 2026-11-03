@@ -1,0 +1,4 @@
+### Error yang aman ditampilkan ke pengguna.
+exception: WhiskerException
+fields:
+  message: String

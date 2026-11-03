@@ -1,0 +1,19 @@
+### Satu Hub = satu repo git berisi vault markdown.
+class: Hub
+table: hub
+fields:
+  name: String
+  slug: String
+  ### `owner/name` di GitHub, bila repo ada di GitHub.
+  githubRepo: String?
+  ### URL clone tanpa kredensial (https GitHub atau path lokal untuk dev/test).
+  remoteUrl: String
+  installationId: int?
+  defaultBranch: String, default='main'
+  headSha: String?
+  lastIndexedAt: DateTime?
+  ownerId: UuidValue
+indexes:
+  hub_slug_idx:
+    fields: slug
+    unique: true

@@ -1,0 +1,20 @@
+### Indeks satu file markdown di Hub (turunan repo; isi tidak disimpan).
+class: HubDocument
+table: document
+fields:
+  hubId: int
+  path: String
+  title: String
+  area: String
+  type: String?
+  status: String?
+  ### Frontmatter sebagai JSON.
+  frontmatter: String
+  tags: List<String>
+  blobSha: String
+  lastCommitSha: String?
+  updatedAt: DateTime
+indexes:
+  document_hub_path_idx:
+    fields: hubId, path
+    unique: true

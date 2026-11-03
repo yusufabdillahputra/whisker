@@ -1,0 +1,10 @@
+### Catatan satu backup zip harian.
+class: BackupRecord
+table: backup
+fields:
+  hubId: int
+  objectKey: String
+  sizeBytes: int
+  createdAt: DateTime
+  status: String
+  error: String?

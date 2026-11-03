@@ -1,0 +1,11 @@
+### Keanggotaan Hub; MVP hanya `owner`, `editor`/`viewer` disiapkan.
+class: HubMember
+table: hub_member
+fields:
+  hubId: int
+  userId: UuidValue
+  role: String
+indexes:
+  hub_member_unique_idx:
+    fields: hubId, userId
+    unique: true

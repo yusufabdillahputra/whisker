@@ -1,0 +1,7 @@
+class: DocSummary
+fields:
+  path: String
+  title: String
+  area: String
+  type: String?
+  status: String?

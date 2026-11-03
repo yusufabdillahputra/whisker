@@ -1,0 +1,8 @@
+class: CommitRequest
+fields:
+  hubId: int
+  path: String
+  content: String
+  message: String
+  description: String?
+  baseSha: String?

@@ -1,0 +1,7 @@
+class: DocContent
+fields:
+  path: String
+  content: String
+  blobSha: String
+  baseSha: String?
+  readOnlyReason: String?

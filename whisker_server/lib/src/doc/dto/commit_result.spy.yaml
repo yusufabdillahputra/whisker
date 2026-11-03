@@ -1,0 +1,7 @@
+class: CommitResult
+fields:
+  status: String
+  newSha: String?
+  latestContent: String?
+  latestSha: String?
+  reason: String?

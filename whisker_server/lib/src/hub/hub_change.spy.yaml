@@ -1,0 +1,6 @@
+### Siaran "Hub berubah" ke aplikasi.
+class: HubChange
+fields:
+  hubId: int
+  headSha: String
+  paths: List<String>

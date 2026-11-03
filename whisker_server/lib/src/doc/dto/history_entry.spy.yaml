@@ -1,0 +1,6 @@
+class: HistoryEntry
+fields:
+  sha: String
+  message: String
+  authorName: String
+  date: DateTime
