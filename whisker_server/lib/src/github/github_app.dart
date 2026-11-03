@@ -7,7 +7,7 @@ import '../generated/protocol.dart';
 import 'remote_access.dart';
 
 /// Akses repo lewat token instalasi GitHub App (berumur pendek, di-cache).
-class GitHubAppRemoteAccess implements RemoteAccess {
+class GitHubAppRemoteAccess extends RemoteAccess {
   final String appId;
   final String privateKeyPem;
   final http.Client _client;
@@ -65,6 +65,24 @@ class GitHubAppRemoteAccess implements RemoteAccess {
     );
     return token;
   }
+
+  /// ID instalasi App pada [repo] (`owner/name`), atau `null` bila App tidak
+  /// terpasang di sana.
+  Future<int?> installationIdFor(String repo) async {
+    final res = await _client.get(
+      Uri.https('api.github.com', '/repos/$repo/installation'),
+      headers: {
+        'authorization': 'Bearer ${_appJwt()}',
+        'accept': 'application/vnd.github+json',
+        'x-github-api-version': '2022-11-28',
+      },
+    );
+    if (res.statusCode != 200) return null;
+    return (jsonDecode(res.body) as Map<String, dynamic>)['id'] as int?;
+  }
+
+  @override
+  void invalidate(Hub hub) => _cache.remove(hub.installationId);
 
   @override
   Future<String> urlFor(Hub hub) async {

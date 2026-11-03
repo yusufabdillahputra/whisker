@@ -123,4 +123,16 @@ void main() {
     expect(verifyWebhookSignature('s3', body, null), isFalse);
     expect(verifyWebhookSignature('s3', body, 'sha256=00'), isFalse);
   });
+
+  test('installation_id_for_repo', () async {
+    final client = MockClient((req) async {
+      if (req.url.path == '/repos/org/repo/installation') {
+        return http.Response(jsonEncode({'id': 42}), 200);
+      }
+      return http.Response('{}', 404);
+    });
+    final a = app(client, DateTime.now);
+    expect(await a.installationIdFor('org/repo'), 42);
+    expect(await a.installationIdFor('org/lain'), isNull);
+  });
 }

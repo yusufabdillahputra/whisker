@@ -39,15 +39,18 @@ class DocEndpoint extends Endpoint {
     safePath(path);
     final hub = await _svc.requireMember(session, hubId);
     final repo = await _svc.repoFor(hub);
-    final content = await repo.show('HEAD', path);
+    // Satu SHA untuk isi, blob, dan baseSha agar konsisten walau ada commit
+    // lain di antaranya.
+    final head = await repo.revParse('HEAD');
+    final content = head == null ? null : await repo.show(head, path);
     if (content == null) {
       throw WhiskerException(message: 'Dokumen tidak ditemukan: $path');
     }
     return DocContent(
       path: path,
       content: content,
-      blobSha: (await repo.blobAt('HEAD', path))!,
-      baseSha: await repo.lastCommitFor(path),
+      blobSha: (await repo.blobAt(head!, path))!,
+      baseSha: await repo.lastCommitFor(path, rev: head),
       readOnlyReason: readOnlyReason(path, content),
     );
   }

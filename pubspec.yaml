@@ -8,5 +8,5 @@ workspace:
   - markdown_codec
   - whisker_client
   - whisker_server
-  - whisker_flutter
+
 

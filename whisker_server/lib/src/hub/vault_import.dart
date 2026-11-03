@@ -32,6 +32,7 @@ Future<int> extractVault(GitRepo repo, List<int> zipBytes) async {
   for (final (name, f) in files) {
     final path = strip ? name.substring(name.indexOf('/') + 1) : name;
     if (!isSafeRelative(path) || _skipped(path)) continue;
+    if (await repo.hasSymlinkOnPath(path)) continue;
     await repo.writeBytes(path, f.content);
     n++;
   }

@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:serverpod/serverpod.dart';
 
 import '../generated/protocol.dart';
+import '../github/github_app.dart';
+import '../github/remote_access.dart';
 import '../index/indexer.dart';
 import '../sync/hub_events.dart';
 import 'hub_service.dart';
@@ -45,6 +47,24 @@ class HubEndpoint extends Endpoint {
         (githubRepo == null ? null : 'https://github.com/$githubRepo.git');
     if (name.trim().isEmpty || url == null) {
       throw WhiskerException(message: 'Nama dan repo Hub wajib diisi.');
+    }
+    if (githubRepo != null && !isGithubRepoName(githubRepo)) {
+      throw WhiskerException(
+        message: 'Repo GitHub harus berbentuk owner/nama.',
+      );
+    }
+    final invalid = validateRemoteUrl(url, allowLocal: _svc.allowLocalRemotes);
+    if (invalid != null) throw WhiskerException(message: invalid);
+    final remote = _svc.remote;
+    if (installationId != null) {
+      if (remote is! GitHubAppRemoteAccess || githubRepo == null) {
+        throw WhiskerException(message: 'GitHub App belum dikonfigurasi.');
+      }
+      if (await remote.installationIdFor(githubRepo) != installationId) {
+        throw WhiskerException(
+          message: 'GitHub App Whisker tidak terpasang di $githubRepo.',
+        );
+      }
     }
     final hub = await Hub.db.insertRow(
       session,
@@ -94,10 +114,7 @@ class HubEndpoint extends Endpoint {
         committer: whiskerBot,
       );
       await repo.removeIgnored();
-      if (!await _svc.pushWithRebase(hub, repo)) {
-        await repo.resetHard('origin/${hub.defaultBranch}');
-        throw WhiskerException(message: 'Push impor vault gagal.');
-      }
+      await _svc.pushOrReset(hub, repo);
       final paths = await indexHub(session, hub, repo);
       await broadcastChange(
         session,

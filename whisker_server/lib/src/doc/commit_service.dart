@@ -50,6 +50,9 @@ Future<CommitResult> commitDocument(Session session, CommitRequest req) async {
     }
 
     if (origin != null) await repo.resetHard(origin);
+    if (await repo.hasSymlinkOnPath(path)) {
+      throw WhiskerException(message: 'Path dokumen tidak valid: $path');
+    }
     final before = hub.headSha;
     await repo.writeFile(path, req.content);
     final subject = req.message.trim().isEmpty
@@ -61,10 +64,7 @@ Future<CommitResult> commitDocument(Session session, CommitRequest req) async {
       author: author,
       committer: whiskerBot,
     );
-    if (!await svc.pushWithRebase(hub, repo)) {
-      if (origin != null) await repo.resetHard(origin);
-      throw WhiskerException(message: 'Push gagal; coba lagi sebentar.');
-    }
+    await svc.pushOrReset(hub, repo);
     final changed = await indexHub(session, hub, repo, fromSha: before);
     final head = (await repo.head())!;
     await broadcastChange(

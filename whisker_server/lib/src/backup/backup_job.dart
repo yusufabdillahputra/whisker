@@ -18,11 +18,12 @@ Duration untilNextBackup(DateTime nowUtc) {
   return next.difference(nowUtc);
 }
 
-/// Backup zip harian semua Hub (atau [hubs]); `true` bila semua sukses.
+/// Backup zip harian semua Hub (atau [hubs]); mengembalikan Hub yang gagal
+/// (untuk dicoba ulang tiap jam). Hub tanpa commit dilewati.
 ///
 /// Objek lebih tua dari 7 hari dihapus hanya untuk Hub yang backup hari ini
 /// sukses.
-Future<bool> runDailyBackup(
+Future<List<Hub>> runDailyBackup(
   Session s,
   BackupStore store,
   DateTime nowUtc, {
@@ -32,16 +33,17 @@ Future<bool> runDailyBackup(
   final todayDate = DateTime.utc(today.year, today.month, today.day);
   final cutoff = _date(todayDate.subtract(const Duration(days: _keepDays - 1)));
   final svc = HubService.instance;
-  var allOk = true;
+  final failed = <Hub>[];
 
   for (final hub in hubs ?? await Hub.db.find(s)) {
     final prefix = 'backups/${hub.slug}/';
     final key = '$prefix${_date(todayDate)}.zip';
     try {
-      final bytes = await svc.locks.run(
-        hub.id!,
-        () async => (await svc.repoFor(hub)).archiveZip(),
-      );
+      final bytes = await svc.locks.run(hub.id!, () async {
+        final repo = await svc.repoFor(hub);
+        return await repo.head() == null ? null : repo.archiveZip();
+      });
+      if (bytes == null) continue;
       await store.put(key, bytes);
       await BackupRecord.db.insertRow(
         s,
@@ -58,7 +60,7 @@ Future<bool> runDailyBackup(
         if (name.compareTo(cutoff) < 0) await store.delete(old);
       }
     } catch (e) {
-      allOk = false;
+      failed.add(hub);
       s.log('Backup Hub ${hub.id} gagal: $e', level: LogLevel.error);
       await BackupRecord.db.insertRow(
         s,
@@ -73,5 +75,5 @@ Future<bool> runDailyBackup(
       );
     }
   }
-  return allOk;
+  return failed;
 }

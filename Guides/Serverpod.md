@@ -79,11 +79,14 @@ Semua opsional; fitur terkait mati bila kuncinya tidak ada.
 | kunci | dipakai untuk |
 | --- | --- |
 | `githubClientId`, `githubClientSecret` | login GitHub (OAuth App / GitHub App) |
+| `githubAllowedUserIds` | ID numerik pengguna GitHub yang boleh login (dipisah koma); kosong = semua ditolak |
 | `githubAppId`, `githubAppPrivateKey` | token instalasi untuk clone/push repo Hub |
 | `githubWebhookSecret` | verifikasi webhook `push` |
 | `s3Endpoint`, `s3AccessKey`, `s3SecretKey`, `s3Bucket`, `s3Region` | backup ke Object Storage IDCloudHost |
 
-Tanpa kunci GitHub App, server memakai `remoteUrl` Hub apa adanya (path lokal atau kredensial helper git).
+Tanpa kunci GitHub App, server memakai `remoteUrl` Hub apa adanya (kredensial helper git). Remote harus
+`https://github.com/<owner>/<repo>`; path lokal hanya diizinkan di run mode `development`. Login email
+juga hanya aktif di `development`.
 
 ## Test
 

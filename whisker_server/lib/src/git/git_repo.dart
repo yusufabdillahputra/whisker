@@ -50,7 +50,13 @@ class GitRepo {
     'git',
     [..._base, ...args],
     workingDirectory: dir,
-    environment: {'GIT_TERMINAL_PROMPT': '0', ...?env},
+    environment: {
+      'GIT_TERMINAL_PROMPT': '0',
+      // Abaikan konfigurasi git host agar perilaku sama di semua mesin.
+      'GIT_CONFIG_GLOBAL': '/dev/null',
+      'GIT_CONFIG_NOSYSTEM': '1',
+      ...?env,
+    },
     stdoutEncoding: binary ? null : utf8,
     stderrEncoding: utf8,
   );
@@ -90,18 +96,50 @@ class GitRepo {
     return r.exitCode == 0 ? (r.stdout as String).trim() : null;
   }
 
+  /// Menolak URL yang bisa dibaca git sebagai opsi atau transport `ext::`.
+  static String _url(String url) {
+    if (url.startsWith('-') || url.contains('::')) {
+      throw GitException('remote', 'URL remote tidak valid');
+    }
+    return url;
+  }
+
+  /// `true` bila salah satu segmen [path] (relatif ke [dir]) adalah symlink.
+  Future<bool> hasSymlinkOnPath(String path) async {
+    var cur = dir;
+    for (final seg in path.split('/')) {
+      cur = '$cur/$seg';
+      final type = await FileSystemEntity.type(cur, followLinks: false);
+      if (type == FileSystemEntityType.link) return true;
+      if (type == FileSystemEntityType.notFound) return false;
+    }
+    return false;
+  }
+
+  Future<void> _ensureInside(String path) async {
+    if (await hasSymlinkOnPath(path)) {
+      throw GitException('write', 'Path melewati symlink: $path');
+    }
+  }
+
   Future<void> fetch(String url, String branch) => _git([
     'fetch',
     '-q',
-    url,
+    _url(url),
     '+refs/heads/$branch:refs/remotes/origin/$branch',
   ]);
 
   /// SHA branch di remote lewat `ls-remote`, atau `null` bila belum ada.
   Future<String?> remoteHead(String url, String branch) async {
-    final out = await _git(['ls-remote', url, 'refs/heads/$branch']);
+    final out = await _git(['ls-remote', _url(url), 'refs/heads/$branch']);
     final line = out.trim();
     return line.isEmpty ? null : line.split(RegExp(r'\s+')).first;
+  }
+
+  /// SHA dari [rev], atau `null` bila tidak ada.
+  Future<String?> revParse(String rev) async {
+    final r = await _raw(['rev-parse', '-q', '--verify', '$rev^{commit}']);
+    return r.exitCode == 0 ? (r.stdout as String).trim() : null;
   }
 
   /// SHA blob [path] di [rev], atau `null` bila tidak ada.
@@ -118,14 +156,22 @@ class GitRepo {
   }
 
   /// Commit terakhir yang menyentuh [path].
-  Future<String?> lastCommitFor(String path) async {
-    if (await head() == null) return null;
-    final out = (await _git(['log', '-1', '--format=%H', '--', path])).trim();
+  Future<String?> lastCommitFor(String path, {String rev = 'HEAD'}) async {
+    if (await revParse(rev) == null) return null;
+    final out = (await _git([
+      'log',
+      '-1',
+      '--format=%H',
+      rev,
+      '--',
+      path,
+    ])).trim();
     return out.isEmpty ? null : out;
   }
 
   /// Menulis [content] persis apa adanya ke [path] di working tree.
   Future<void> writeFile(String path, String content) async {
+    await _ensureInside(path);
     final f = File('$dir/$path');
     await f.parent.create(recursive: true);
     await f.writeAsBytes(utf8.encode(content), flush: true);
@@ -133,6 +179,7 @@ class GitRepo {
 
   /// Menulis byte mentah ke [path] di working tree.
   Future<void> writeBytes(String path, List<int> bytes) async {
+    await _ensureInside(path);
     final f = File('$dir/$path');
     await f.parent.create(recursive: true);
     await f.writeAsBytes(bytes, flush: true);
@@ -165,7 +212,7 @@ class GitRepo {
 
   /// Push `HEAD` ke [branch]; `false` bila ditolak karena remote maju.
   Future<bool> push(String url, String branch) async {
-    final args = ['push', '-q', url, 'HEAD:refs/heads/$branch'];
+    final args = ['push', '-q', _url(url), 'HEAD:refs/heads/$branch'];
     final r = await _raw(args);
     if (r.exitCode == 0) {
       await _git(['update-ref', 'refs/remotes/origin/$branch', 'HEAD']);
@@ -176,9 +223,16 @@ class GitRepo {
     throw GitException(args.join(' '), err);
   }
 
-  /// Rebase ke [rev]; bila konflik dibatalkan dan mengembalikan `false`.
-  Future<bool> rebaseOnto(String rev) async {
-    final r = await _raw(['rebase', '-q', rev]);
+  /// Rebase ke [rev] dengan [committer] sebagai committer commit yang
+  /// diterapkan ulang; bila konflik dibatalkan dan mengembalikan `false`.
+  Future<bool> rebaseOnto(String rev, {required GitIdentity committer}) async {
+    final r = await _raw(
+      ['rebase', '-q', rev],
+      env: {
+        'GIT_COMMITTER_NAME': committer.name,
+        'GIT_COMMITTER_EMAIL': committer.email,
+      },
+    );
     if (r.exitCode == 0) return true;
     await _raw(['rebase', '--abort']);
     return false;

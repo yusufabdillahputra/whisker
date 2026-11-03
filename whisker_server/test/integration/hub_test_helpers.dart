@@ -17,6 +17,6 @@ TestSessionBuilder asUser(TestSessionBuilder b, UuidValue userId) => b.copyWith(
 /// Menyiapkan HubService dengan data dir sementara dan skema FTS.
 Future<void> setUpHubService(TestSessionBuilder b) async {
   final dir = await Directory.systemTemp.createTemp('whisker-data-');
-  HubService.instance = HubService(dataDir: dir.path);
+  HubService.instance = HubService(dataDir: dir.path, allowLocalRemotes: true);
   await ensureSearchSchema(b.build());
 }

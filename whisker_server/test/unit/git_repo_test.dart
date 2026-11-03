@@ -5,6 +5,9 @@ import 'package:archive/archive.dart';
 import 'package:test/test.dart';
 import 'package:whisker_server/src/git/git_repo.dart';
 import 'package:whisker_server/src/git/hub_locks.dart';
+import 'package:serverpod/serverpod.dart';
+import 'package:whisker_server/src/generated/protocol.dart';
+import 'package:whisker_server/src/hub/hub_service.dart';
 
 import 'git_test_helpers.dart';
 
@@ -59,7 +62,7 @@ void main() {
     await repo.commitAll('ubah a', author: testAuthor, committer: testBot);
     expect(await repo.push(remote, 'main'), isFalse);
     await repo.fetch(remote, 'main');
-    expect(await repo.rebaseOnto('origin/main'), isTrue);
+    expect(await repo.rebaseOnto('origin/main', committer: testBot), isTrue);
     expect(await repo.push(remote, 'main'), isTrue);
     final check = await GitRepo.clone(remote, await tempDir(), branch: 'main');
     expect(await File('${check.dir}/b.md').readAsString(), 'dari PC');
@@ -111,5 +114,21 @@ void main() {
     } on GitException catch (e) {
       expect(e.toString(), isNot(contains('RAHASIA')));
     }
+  });
+
+  test('repo_for_concurrent_first_clone', () async {
+    final remote = await bareRemote();
+    await pushFiles(remote, {'a.md': '1'});
+    final svc = HubService(dataDir: await tempDir(), allowLocalRemotes: true);
+    final hub = Hub(
+      id: 7,
+      name: 'h',
+      slug: 'h',
+      remoteUrl: remote,
+      ownerId: const Uuid().v4obj(),
+    );
+    final repos = await Future.wait([svc.repoFor(hub), svc.repoFor(hub)]);
+    expect(await repos[0].show('HEAD', 'a.md'), '1');
+    expect(await repos[1].show('HEAD', 'a.md'), '1');
   });
 }

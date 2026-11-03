@@ -47,7 +47,7 @@ void main() {
     String key(String date) => 'backups/${hub.slug}/$date.zip';
 
     test('writes_zip_and_record', () async {
-      expect(await runDailyBackup(s, store, now, hubs: [hub]), isTrue);
+      expect(await runDailyBackup(s, store, now, hubs: [hub]), isEmpty);
       expect(store.objects.keys, [key('2026-11-04')]);
       final rec = await BackupRecord.db.findFirstRow(
         s,
@@ -78,7 +78,10 @@ void main() {
     test('failure_keeps_old', () async {
       store.objects[key('2026-10-01')] = [1];
       store.failPut = true;
-      expect(await runDailyBackup(s, store, now, hubs: [hub]), isFalse);
+      expect(
+        (await runDailyBackup(s, store, now, hubs: [hub])).map((h) => h.id),
+        [hub.id],
+      );
       expect(store.objects.keys, [key('2026-10-01')]);
       final rec = await BackupRecord.db.findFirstRow(
         s,
@@ -97,6 +100,22 @@ void main() {
         untilNextBackup(DateTime.utc(2026, 11, 3, 20)),
         const Duration(hours: 23),
       );
+    });
+
+    test('skips_empty_hub', () async {
+      final me = asUser(sessionBuilder, const Uuid().v4obj());
+      final empty = await endpoints.hub.create(
+        me,
+        'Kosong',
+        remoteUrl: await bareRemote(),
+      );
+      expect(await runDailyBackup(s, store, now, hubs: [empty]), isEmpty);
+      expect(store.objects, isEmpty);
+      final recs = await BackupRecord.db.find(
+        s,
+        where: (b) => b.hubId.equals(empty.id!),
+      );
+      expect(recs, isEmpty);
     });
   });
 }
