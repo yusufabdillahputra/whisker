@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forui/forui.dart';
@@ -77,6 +78,11 @@ class _WorkspacePageState extends ConsumerState<WorkspacePage> {
     );
   }
 
+  Future<void> _search() async {
+    final path = await showSearchPalette(context, widget.hubId);
+    if (path != null && mounted) _open(path);
+  }
+
   Widget _tree() {
     final tree = ref.watch(treeProvider(widget.hubId));
     return tree.when(
@@ -91,7 +97,15 @@ class _WorkspacePageState extends ConsumerState<WorkspacePage> {
       : EditorPane(key: ValueKey(_path), hubId: widget.hubId, path: _path!);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => CallbackShortcuts(
+    bindings: {
+      const SingleActivator(LogicalKeyboardKey.keyK, control: true): _search,
+      const SingleActivator(LogicalKeyboardKey.keyK, meta: true): _search,
+    },
+    child: Focus(autofocus: true, child: _layout(context)),
+  );
+
+  Widget _layout(BuildContext context) {
     final colors = context.theme.colors;
     final hubs = ref.watch(hubsProvider).value ?? const [];
     final name =
@@ -110,6 +124,12 @@ class _WorkspacePageState extends ConsumerState<WorkspacePage> {
         ),
       ],
       suffixes: [
+        if (wide || medium)
+          FHeaderAction(
+            icon: const Icon(FLucideIcons.search),
+            semanticsLabel: 'Cari (Ctrl K)',
+            onPress: _search,
+          ),
         if (medium || (!wide && _tab == 1))
           FHeaderAction(
             icon: const Icon(FLucideIcons.panelRight),

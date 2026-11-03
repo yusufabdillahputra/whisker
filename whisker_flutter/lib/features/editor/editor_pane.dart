@@ -272,6 +272,11 @@ class EditorPaneState extends ConsumerState<EditorPane> {
               editorState: editorState!,
               editable: s.readOnlyReason == null,
               editorStyle: _style(context, narrow),
+              // Ctrl/Cmd K dipakai palet pencarian, bukan menu tautan.
+              commandShortcutEvents: [
+                for (final e in standardCommandShortcutEvents)
+                  if (e.key != showLinkMenuCommand.key) e,
+              ],
               blockComponentBuilders: {
                 ...standardBlockComponentBuilderMap,
                 rawBlockType: RawBlockComponentBuilder(
