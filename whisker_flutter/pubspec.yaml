@@ -37,6 +37,8 @@ dependencies:
   go_router: ^18.1.2
   # Rilis 6.2.0 belum kompatibel Flutter 3.47 (TextInputClient.onFocusReceived);
   # dipatok ke commit main yang sudah memperbaikinya.
+  markdown: ^7.3.1
+  provider: ^6.1.5
   appflowy_editor:
     git:
       url: https://github.com/AppFlowy-IO/appflowy-editor.git
