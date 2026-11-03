@@ -17,6 +17,7 @@ import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _iacs;
 import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _iais;
+import 'package:whisker_server/src/generated/hub/hub.dart' as _i4ennidr;
 import 'backup/backup_record.dart' as _ih5wr8up;
 import 'doc/document_link.dart' as _iyowq5et;
 import 'doc/dto/commit_request.dart' as _iug8u9w8;
@@ -84,6 +85,7 @@ class Protocol extends _is.DatabaseSerializationManager
           _is.getType<_iv7a87od.HubMember?>,
           _is.getType<_i5k8hrwr.WhiskerException?>,
           _is.getType<List<String>>,
+          _is.getType<List<_i4ennidr.Hub>>,
         ],
         modules: const [
           _iais.Protocol.new,
@@ -585,6 +587,10 @@ class Protocol extends _is.DatabaseSerializationManager
     }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
+    }
+    if (t == List<_i4ennidr.Hub>) {
+      return (data as List).map((e) => deserialize<_i4ennidr.Hub>(e)).toList()
+          as T;
     }
     final modules = deserializationMetadata.modulesForDeserialization(
       t,

@@ -13,3 +13,8 @@ emailIdp:
   - hasAccount:
 jwtRefresh:
   - refreshAccessToken:
+hub:
+  - list:
+  - create:
+  - importVault:
+  - reindex:

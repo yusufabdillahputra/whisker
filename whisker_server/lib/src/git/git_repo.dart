@@ -131,6 +131,13 @@ class GitRepo {
     await f.writeAsBytes(utf8.encode(content), flush: true);
   }
 
+  /// Menulis byte mentah ke [path] di working tree.
+  Future<void> writeBytes(String path, List<int> bytes) async {
+    final f = File('$dir/$path');
+    await f.parent.create(recursive: true);
+    await f.writeAsBytes(bytes, flush: true);
+  }
+
   /// `git add -A` lalu commit; mengembalikan SHA baru.
   Future<String> commitAll(
     String message, {
@@ -181,6 +188,9 @@ class GitRepo {
     await _git(['reset', '-q', '--hard', rev]);
     await _git(['clean', '-q', '-fd']);
   }
+
+  /// Menghapus file yang cocok `.gitignore` dari working tree.
+  Future<void> removeIgnored() => _git(['clean', '-q', '-fdX']);
 
   /// Path yang berubah antara [from] dan [to]; [from] `null` = semua file di [to].
   Future<List<String>> changedPaths(String? from, String to) async {

@@ -11,12 +11,14 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _ida;
+import 'dart:typed_data' as _idt;
 import 'package:http/http.dart' as _i85jenna;
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
     as _iacc;
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
     as _iaic;
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
+import 'package:whisker_client/src/protocol/hub/hub.dart' as _izxm48xu;
 import 'protocol.dart' as _il2as5qe;
 
 /// By extending [EmailOtpIdpBaseEndpoint], the email identity provider
@@ -345,6 +347,63 @@ class EndpointJwtRefresh extends _iacc.EndpointRefreshJwtTokens {
       );
 }
 
+/// Kelola Hub: daftar, buat, impor vault, indeks ulang.
+/// {@category Endpoint}
+class EndpointHub extends _isc.EndpointRef {
+  EndpointHub(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'hub';
+
+  /// Hub tempat pengguna menjadi anggota.
+  _ida.Future<List<_izxm48xu.Hub>> list() =>
+      caller.callServerEndpoint<List<_izxm48xu.Hub>>(
+        'hub',
+        'list',
+        {},
+      );
+
+  /// Membuat Hub yang terhubung ke repo; isi repo langsung diindeks.
+  _ida.Future<_izxm48xu.Hub> create(
+    String name, {
+    String? githubRepo,
+    String? remoteUrl,
+    int? installationId,
+    String? defaultBranch,
+  }) => caller.callServerEndpoint<_izxm48xu.Hub>(
+    'hub',
+    'create',
+    {
+      'name': name,
+      'githubRepo': githubRepo,
+      'remoteUrl': remoteUrl,
+      'installationId': installationId,
+      'defaultBranch': defaultBranch,
+    },
+  );
+
+  /// Mengimpor vault Obsidian (zip) lalu commit, push, dan indeks penuh.
+  _ida.Future<_izxm48xu.Hub> importVault(
+    int hubId,
+    _idt.ByteData zip,
+  ) => caller.callServerEndpoint<_izxm48xu.Hub>(
+    'hub',
+    'importVault',
+    {
+      'hubId': hubId,
+      'zip': zip,
+    },
+  );
+
+  /// Membangun ulang indeks Hub dari clone kerja.
+  _ida.Future<_izxm48xu.Hub> reindex(int hubId) =>
+      caller.callServerEndpoint<_izxm48xu.Hub>(
+        'hub',
+        'reindex',
+        {'hubId': hubId},
+      );
+}
+
 class Modules {
   Modules(Client client) {
     serverpod_auth_idp = _iaic.Caller(client);
@@ -385,6 +444,7 @@ class Client extends _isc.ServerpodClientShared {
        ) {
     emailIdp = EndpointEmailIdp(this);
     jwtRefresh = EndpointJwtRefresh(this);
+    hub = EndpointHub(this);
     modules = Modules(this);
   }
 
@@ -392,12 +452,15 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointJwtRefresh jwtRefresh;
 
+  late final EndpointHub hub;
+
   late final Modules modules;
 
   @override
   Map<String, _isc.EndpointRef> get endpointRefLookup => {
     'emailIdp': emailIdp,
     'jwtRefresh': jwtRefresh,
+    'hub': hub,
   };
 
   @override

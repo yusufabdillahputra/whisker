@@ -10,6 +10,7 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'dart:typed_data' as _idt;
 import 'package:serverpod/serverpod.dart' as _is;
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _iacs;
@@ -17,6 +18,7 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _iais;
 import '../auth/email_idp_endpoint.dart' as _iuc1hd5t;
 import '../auth/jwt_refresh_endpoint.dart' as _inwq3ztq;
+import '../hub/hub_endpoint.dart' as _ix5pbm3r;
 
 class Endpoints extends _is.EndpointDispatch {
   @override
@@ -32,6 +34,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'jwtRefresh',
+          null,
+        ),
+      'hub': _ix5pbm3r.HubEndpoint()
+        ..initialize(
+          server,
+          'hub',
           null,
         ),
     };
@@ -326,6 +334,107 @@ class Endpoints extends _is.EndpointDispatch {
                         session,
                         refreshToken: params['refreshToken'],
                       ),
+        ),
+      },
+    );
+    connectors['hub'] = _is.EndpointConnector(
+      name: 'hub',
+      endpoint: endpoints['hub']!,
+      methodConnectors: {
+        'list': _is.MethodConnector(
+          name: 'list',
+          params: {},
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['hub'] as _ix5pbm3r.HubEndpoint).list(session),
+        ),
+        'create': _is.MethodConnector(
+          name: 'create',
+          params: {
+            'name': _is.ParameterDescription(
+              name: 'name',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'githubRepo': _is.ParameterDescription(
+              name: 'githubRepo',
+              type: _is.getType<String?>(),
+              nullable: true,
+            ),
+            'remoteUrl': _is.ParameterDescription(
+              name: 'remoteUrl',
+              type: _is.getType<String?>(),
+              nullable: true,
+            ),
+            'installationId': _is.ParameterDescription(
+              name: 'installationId',
+              type: _is.getType<int?>(),
+              nullable: true,
+            ),
+            'defaultBranch': _is.ParameterDescription(
+              name: 'defaultBranch',
+              type: _is.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['hub'] as _ix5pbm3r.HubEndpoint).create(
+                session,
+                params['name'],
+                githubRepo: params['githubRepo'],
+                remoteUrl: params['remoteUrl'],
+                installationId: params['installationId'],
+                defaultBranch: params['defaultBranch'],
+              ),
+        ),
+        'importVault': _is.MethodConnector(
+          name: 'importVault',
+          params: {
+            'hubId': _is.ParameterDescription(
+              name: 'hubId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'zip': _is.ParameterDescription(
+              name: 'zip',
+              type: _is.getType<_idt.ByteData>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['hub'] as _ix5pbm3r.HubEndpoint).importVault(
+                    session,
+                    params['hubId'],
+                    params['zip'],
+                  ),
+        ),
+        'reindex': _is.MethodConnector(
+          name: 'reindex',
+          params: {
+            'hubId': _is.ParameterDescription(
+              name: 'hubId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['hub'] as _ix5pbm3r.HubEndpoint).reindex(
+                session,
+                params['hubId'],
+              ),
         ),
       },
     );
