@@ -4,6 +4,8 @@
 /// byte-identik dengan aslinya.
 library;
 
+export 'src/block.dart';
+export 'src/document.dart';
 export 'src/frontmatter.dart';
 
 /// Versi paket.
