@@ -318,6 +318,45 @@ class EndpointEmailIdp extends _iaic.EndpointEmailOtpIdpBase {
   );
 }
 
+/// Login dengan GitHub (aktif bila `githubClientId` ada di passwords).
+/// {@category Endpoint}
+class EndpointGitHubIdp extends _iaic.EndpointGitHubIdpBase {
+  EndpointGitHubIdp(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'gitHubIdp';
+
+  /// Validates a GitHub authorization code and either logs in the associated
+  /// user or creates a new user account if the GitHub account ID is not yet
+  /// known.
+  ///
+  /// This method exchanges the `authorization code` for an `access token` using
+  /// `PKCE`, then authenticates the user.
+  ///
+  /// If a new user is created an associated [UserProfile] is also created.
+  @override
+  _ida.Future<_iacc.AuthSuccess> login({
+    required String code,
+    required String codeVerifier,
+    required String redirectUri,
+  }) => caller.callServerEndpoint<_iacc.AuthSuccess>(
+    'gitHubIdp',
+    'login',
+    {
+      'code': code,
+      'codeVerifier': codeVerifier,
+      'redirectUri': redirectUri,
+    },
+  );
+
+  @override
+  _ida.Future<bool> hasAccount() => caller.callServerEndpoint<bool>(
+    'gitHubIdp',
+    'hasAccount',
+    {},
+  );
+}
+
 /// By extending [RefreshJwtTokensEndpoint], the JWT token refresh endpoint
 /// is made available on the server and enables automatic token refresh on the client.
 /// {@category Endpoint}
@@ -547,6 +586,7 @@ class Client extends _isc.ServerpodClientShared {
          httpClientOverride: httpClientOverride,
        ) {
     emailIdp = EndpointEmailIdp(this);
+    gitHubIdp = EndpointGitHubIdp(this);
     jwtRefresh = EndpointJwtRefresh(this);
     doc = EndpointDoc(this);
     hub = EndpointHub(this);
@@ -554,6 +594,8 @@ class Client extends _isc.ServerpodClientShared {
   }
 
   late final EndpointEmailIdp emailIdp;
+
+  late final EndpointGitHubIdp gitHubIdp;
 
   late final EndpointJwtRefresh jwtRefresh;
 
@@ -566,6 +608,7 @@ class Client extends _isc.ServerpodClientShared {
   @override
   Map<String, _isc.EndpointRef> get endpointRefLookup => {
     'emailIdp': emailIdp,
+    'gitHubIdp': gitHubIdp,
     'jwtRefresh': jwtRefresh,
     'doc': doc,
     'hub': hub,

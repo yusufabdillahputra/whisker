@@ -66,8 +66,11 @@ void main() {
       await runDailyBackup(s, store, now, hubs: [hub]);
       final mine = (await store.list('backups/${hub.slug}/'))..sort();
       expect(mine, [
-        key('2026-10-29'), key('2026-10-30'), key('2026-10-31'),
-        key('2026-11-01'), key('2026-11-04'),
+        key('2026-10-29'),
+        key('2026-10-30'),
+        key('2026-10-31'),
+        key('2026-11-01'),
+        key('2026-11-04'),
       ]);
       expect(store.objects.containsKey('backups/lain/2026-01-01.zip'), isTrue);
     });
@@ -86,8 +89,14 @@ void main() {
     });
 
     test('until_next_backup', () {
-      expect(untilNextBackup(DateTime.utc(2026, 11, 3, 18)), const Duration(hours: 1));
-      expect(untilNextBackup(DateTime.utc(2026, 11, 3, 20)), const Duration(hours: 23));
+      expect(
+        untilNextBackup(DateTime.utc(2026, 11, 3, 18)),
+        const Duration(hours: 1),
+      );
+      expect(
+        untilNextBackup(DateTime.utc(2026, 11, 3, 20)),
+        const Duration(hours: 23),
+      );
     });
   });
 }

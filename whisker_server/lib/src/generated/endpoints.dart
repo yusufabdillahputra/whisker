@@ -19,6 +19,7 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
 import 'package:whisker_server/src/generated/doc/dto/commit_request.dart'
     as _iv7vs6y1;
 import '../auth/email_idp_endpoint.dart' as _iuc1hd5t;
+import '../auth/github_idp_endpoint.dart' as _iuaixnf2;
 import '../auth/jwt_refresh_endpoint.dart' as _inwq3ztq;
 import '../doc/doc_endpoint.dart' as _ijaiwqyj;
 import '../hub/hub_endpoint.dart' as _ix5pbm3r;
@@ -31,6 +32,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'emailIdp',
+          null,
+        ),
+      'gitHubIdp': _iuaixnf2.GitHubIdpEndpoint()
+        ..initialize(
+          server,
+          'gitHubIdp',
           null,
         ),
       'jwtRefresh': _inwq3ztq.JwtRefreshEndpoint()
@@ -316,6 +323,53 @@ class Endpoints extends _is.EndpointDispatch {
                 _is.Session session,
                 Map<String, dynamic> params,
               ) async => (endpoints['emailIdp'] as _iuc1hd5t.EmailIdpEndpoint)
+                  .hasAccount(session),
+        ),
+      },
+    );
+    connectors['gitHubIdp'] = _is.EndpointConnector(
+      name: 'gitHubIdp',
+      endpoint: endpoints['gitHubIdp']!,
+      methodConnectors: {
+        'login': _is.MethodConnector(
+          name: 'login',
+          params: {
+            'code': _is.ParameterDescription(
+              name: 'code',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'codeVerifier': _is.ParameterDescription(
+              name: 'codeVerifier',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'redirectUri': _is.ParameterDescription(
+              name: 'redirectUri',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['gitHubIdp'] as _iuaixnf2.GitHubIdpEndpoint).login(
+                    session,
+                    code: params['code'],
+                    codeVerifier: params['codeVerifier'],
+                    redirectUri: params['redirectUri'],
+                  ),
+        ),
+        'hasAccount': _is.MethodConnector(
+          name: 'hasAccount',
+          params: {},
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['gitHubIdp'] as _iuaixnf2.GitHubIdpEndpoint)
                   .hasAccount(session),
         ),
       },

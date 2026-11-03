@@ -33,7 +33,7 @@ database:
   #maxConnectionCount: 10 # Defaults to 10, a negative or null value removes the limit
 
 
-maxRequestSize: 524288 # The maximum size of requests allowed in bytes
+maxRequestSize: 268435456 # 256 MB: impor vault zip (base64) bisa besar
 
 sessionLogs:
   persistentEnabled: true

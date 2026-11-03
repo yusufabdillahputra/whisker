@@ -7,12 +7,14 @@ FROM dart:3.12.2 AS build
 # Create a minimal workspace that preserves locked server dependency versions.
 WORKDIR /app
 COPY pubspec.lock .
+COPY markdown_codec markdown_codec
 COPY whisker_server whisker_server
 RUN printf '%s\n' \
   'name: _' \
   'environment:' \
   '  sdk: ^3.12.2' \
   'workspace:' \
+  '  - markdown_codec' \
   '  - whisker_server' \
   > pubspec.yaml
 RUN dart pub get
@@ -28,6 +30,11 @@ RUN mkdir -p config web migrations
 # Final stage
 FROM alpine:latest
 WORKDIR /app
+
+# git dipakai untuk clone kerja tiap Hub.
+RUN apk add --no-cache git ca-certificates
+ENV WHISKER_DATA_DIR=/data
+VOLUME /data
 
 # Environment variables
 ENV runmode=production

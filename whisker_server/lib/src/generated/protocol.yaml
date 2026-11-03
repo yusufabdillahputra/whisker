@@ -11,6 +11,9 @@ emailIdp:
   - verifyPasswordResetCode:
   - finishPasswordReset:
   - hasAccount:
+gitHubIdp:
+  - login:
+  - hasAccount:
 jwtRefresh:
   - refreshAccessToken:
 doc:

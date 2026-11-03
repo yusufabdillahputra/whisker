@@ -1,40 +1,49 @@
+import 'dart:async';
+
 import 'package:serverpod_auth_idp_server/core.dart';
 import 'package:serverpod_auth_idp_server/providers/email.dart';
+import 'package:serverpod_auth_idp_server/providers/github.dart';
 import 'package:serverpod_cloud_storage/serverpod_cloud_storage.dart';
 
+import 'src/backup/backup_job.dart';
+import 'src/backup/backup_store.dart';
+import 'src/doc/search_schema.dart';
 import 'src/generated/serverpod.dart';
+import 'src/github/remote_access.dart';
+import 'src/hub/hub_service.dart';
+import 'src/sync/remote_sync.dart';
+import 'src/sync/webhook_route.dart';
 
-/// The starting point of the Serverpod server.
+/// Kunci passwords Whisker (lihat Guides/Serverpod.md).
+const _passwordKeys = [
+  'githubClientId',
+  'githubAppId',
+  'githubAppPrivateKey',
+  'githubWebhookSecret',
+  's3Endpoint',
+  's3AccessKey',
+  's3SecretKey',
+  's3Bucket',
+  's3Region',
+];
+
+/// Titik awal server Whisker.
 void run(List<String> args) async {
-  // Initialize Serverpod. The generated Serverpod class is already connected
-  // with your project's generated code.
   final pod = Serverpod(args);
+  final pw = {
+    for (final k in _passwordKeys)
+      if (pod.getPassword(k) case final v?) k: v,
+  };
 
-  // Initialize authentication services for the server.
-  // Token managers will be used to validate and issue authentication keys,
-  // and the identity providers will be the authentication options available for users.
   pod.initializeAuthServices(
-    tokenManagerBuilders: [
-      // Use JWT for authentication keys towards the server.
-      JwtConfigFromPasswords(),
-    ],
+    tokenManagerBuilders: [JwtConfigFromPasswords()],
     identityProviderBuilders: [
-      // Configure the email identity provider for email/password authentication.
-      // The default setup works with Serverpod Cloud without configuration. In
-      // development the verification codes are logged to the console, and in
-      // staging and production they are sent through the Serverpod Cloud email
-      // service. If you want to use a custom provider for sending emails, use
-      // `EmailIdpConfigFromPasswords`.
-      ServerpodCloudEmailIdpConfig(
-        appDisplayName: 'whisker',
-      ),
+      if (pw.containsKey('githubClientId')) GitHubIdpConfigFromPasswords(),
+      // Login email untuk pengembangan lokal (kode verifikasi dicetak di log).
+      ServerpodCloudEmailIdpConfig(appDisplayName: 'Whisker'),
     ],
   );
 
-  // Configure cloud storage.
-  // This setup works with Serverpod Cloud without extra configuration.
-  // If you want to use a custom provider for cloud storage, replace these
-  // with your preferred provider.
   pod.addCloudStorage(
     await ServerpodCloudProvider.private(
       fallback: () => DatabaseCloudStorage('private'),
@@ -46,6 +55,48 @@ void run(List<String> args) async {
     ),
   );
 
-  // Start the server.
+  HubService.instance = HubService(remote: remoteAccessFromPasswords(pw));
+
+  final webhookSecret = pw['githubWebhookSecret'];
+  if (webhookSecret != null) {
+    pod.webServer.addRoute(
+      GithubWebhookRoute(webhookSecret),
+      '/webhooks/github',
+    );
+  }
+
   await pod.start();
+
+  final boot = await pod.createSession();
+  await ensureSearchSchema(boot);
+  await boot.close();
+
+  schedule(pod, BackupStore? backup) {
+    Timer.periodic(const Duration(minutes: 5), (_) async {
+      final s = await pod.createSession();
+      try {
+        await reconcileAll(s);
+      } finally {
+        await s.close();
+      }
+    });
+    if (backup == null) return;
+    Future<void> runBackup() async {
+      final s = await pod.createSession();
+      var ok = false;
+      try {
+        ok = await runDailyBackup(s, backup, DateTime.now().toUtc());
+      } finally {
+        await s.close();
+      }
+      final wait = ok
+          ? untilNextBackup(DateTime.now().toUtc())
+          : const Duration(hours: 1);
+      Timer(wait, runBackup);
+    }
+
+    Timer(untilNextBackup(DateTime.now().toUtc()), runBackup);
+  }
+
+  schedule(pod, MinioBackupStore.fromPasswords(pw));
 }

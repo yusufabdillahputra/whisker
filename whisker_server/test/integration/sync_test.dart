@@ -11,11 +11,15 @@ import '../unit/git_test_helpers.dart';
 import 'hub_test_helpers.dart';
 import 'test_tools/serverpod_test_tools.dart';
 
-Map<String, String> signed(String secret, List<int> body, {String event = 'push'}) => {
-      'x-github-event': event,
-      'x-hub-signature-256':
-          'sha256=${Hmac(sha256, utf8.encode(secret)).convert(body)}',
-    };
+Map<String, String> signed(
+  String secret,
+  List<int> body, {
+  String event = 'push',
+}) => {
+  'x-github-event': event,
+  'x-hub-signature-256':
+      'sha256=${Hmac(sha256, utf8.encode(secret)).convert(body)}',
+};
 
 void main() {
   withServerpod('Sinkron', (sessionBuilder, endpoints) {
@@ -78,19 +82,27 @@ void main() {
 
     test('webhook_push_syncs', () async {
       await pushFiles(remote, {'c.md': '# C\n'});
-      final body = utf8.encode(jsonEncode({
-        'ref': 'refs/heads/main',
-        'repository': {'full_name': hub.githubRepo},
-      }));
-      final (code, msg) =
-          await handleGithubWebhook(s, signed('k', body), body, 'k');
+      final body = utf8.encode(
+        jsonEncode({
+          'ref': 'refs/heads/main',
+          'repository': {'full_name': hub.githubRepo},
+        }),
+      );
+      final (code, msg) = await handleGithubWebhook(
+        s,
+        signed('k', body),
+        body,
+        'k',
+      );
       expect((code, msg), (200, 'synced'));
       final docs = await endpoints.doc.tree(me, hub.id!);
       expect(docs.map((d) => d.path), contains('c.md'));
-      final other = utf8.encode(jsonEncode({
-        'ref': 'refs/heads/main',
-        'repository': {'full_name': 'org/tidak-dikenal'},
-      }));
+      final other = utf8.encode(
+        jsonEncode({
+          'ref': 'refs/heads/main',
+          'repository': {'full_name': 'org/tidak-dikenal'},
+        }),
+      );
       expect(
         (await handleGithubWebhook(s, signed('k', other), other, 'k')).$1,
         202,
