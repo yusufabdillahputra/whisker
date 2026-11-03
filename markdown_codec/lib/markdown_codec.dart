@@ -4,6 +4,7 @@
 /// byte-identik dengan aslinya.
 library;
 
+export 'src/assemble.dart';
 export 'src/block.dart';
 export 'src/classify.dart';
 export 'src/document.dart';
