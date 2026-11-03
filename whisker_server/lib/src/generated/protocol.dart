@@ -17,6 +17,12 @@ import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _iacs;
 import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _iais;
+import 'package:whisker_server/src/generated/doc/dto/doc_summary.dart'
+    as _i0ink730;
+import 'package:whisker_server/src/generated/doc/dto/history_entry.dart'
+    as _iq2g4yng;
+import 'package:whisker_server/src/generated/doc/dto/search_hit.dart'
+    as _ij5ekrht;
 import 'package:whisker_server/src/generated/hub/hub.dart' as _i4ennidr;
 import 'backup/backup_record.dart' as _ih5wr8up;
 import 'doc/document_link.dart' as _iyowq5et;
@@ -85,6 +91,9 @@ class Protocol extends _is.DatabaseSerializationManager
           _is.getType<_iv7a87od.HubMember?>,
           _is.getType<_i5k8hrwr.WhiskerException?>,
           _is.getType<List<String>>,
+          _is.getType<List<_i0ink730.DocSummary>>,
+          _is.getType<List<_ij5ekrht.SearchHit>>,
+          _is.getType<List<_iq2g4yng.HistoryEntry>>,
           _is.getType<List<_i4ennidr.Hub>>,
         ],
         modules: const [
@@ -587,6 +596,24 @@ class Protocol extends _is.DatabaseSerializationManager
     }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
+    }
+    if (t == List<_i0ink730.DocSummary>) {
+      return (data as List)
+              .map((e) => deserialize<_i0ink730.DocSummary>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_ij5ekrht.SearchHit>) {
+      return (data as List)
+              .map((e) => deserialize<_ij5ekrht.SearchHit>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_iq2g4yng.HistoryEntry>) {
+      return (data as List)
+              .map((e) => deserialize<_iq2g4yng.HistoryEntry>(e))
+              .toList()
+          as T;
     }
     if (t == List<_i4ennidr.Hub>) {
       return (data as List).map((e) => deserialize<_i4ennidr.Hub>(e)).toList()

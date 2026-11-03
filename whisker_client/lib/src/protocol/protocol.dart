@@ -16,6 +16,12 @@ import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
     as _iaic;
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
+import 'package:whisker_client/src/protocol/doc/dto/doc_summary.dart'
+    as _i0nbfzvr;
+import 'package:whisker_client/src/protocol/doc/dto/history_entry.dart'
+    as _ifni3lc9;
+import 'package:whisker_client/src/protocol/doc/dto/search_hit.dart'
+    as _ioseiyuf;
 import 'package:whisker_client/src/protocol/hub/hub.dart' as _izxm48xu;
 import 'backup/backup_record.dart' as _ih5wr8up;
 import 'doc/document_link.dart' as _iyowq5et;
@@ -85,6 +91,9 @@ class Protocol extends _isc.SerializationManager
           _isc.getType<_iv7a87od.HubMember?>,
           _isc.getType<_i5k8hrwr.WhiskerException?>,
           _isc.getType<List<String>>,
+          _isc.getType<List<_i0nbfzvr.DocSummary>>,
+          _isc.getType<List<_ioseiyuf.SearchHit>>,
+          _isc.getType<List<_ifni3lc9.HistoryEntry>>,
           _isc.getType<List<_izxm48xu.Hub>>,
         ],
         modules: const [
@@ -214,6 +223,24 @@ class Protocol extends _isc.SerializationManager
     }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
+    }
+    if (t == List<_i0nbfzvr.DocSummary>) {
+      return (data as List)
+              .map((e) => deserialize<_i0nbfzvr.DocSummary>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_ioseiyuf.SearchHit>) {
+      return (data as List)
+              .map((e) => deserialize<_ioseiyuf.SearchHit>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_ifni3lc9.HistoryEntry>) {
+      return (data as List)
+              .map((e) => deserialize<_ifni3lc9.HistoryEntry>(e))
+              .toList()
+          as T;
     }
     if (t == List<_izxm48xu.Hub>) {
       return (data as List).map((e) => deserialize<_izxm48xu.Hub>(e)).toList()

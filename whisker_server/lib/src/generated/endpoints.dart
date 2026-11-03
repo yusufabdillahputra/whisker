@@ -16,8 +16,11 @@ import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _iacs;
 import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _iais;
+import 'package:whisker_server/src/generated/doc/dto/commit_request.dart'
+    as _iv7vs6y1;
 import '../auth/email_idp_endpoint.dart' as _iuc1hd5t;
 import '../auth/jwt_refresh_endpoint.dart' as _inwq3ztq;
+import '../doc/doc_endpoint.dart' as _ijaiwqyj;
 import '../hub/hub_endpoint.dart' as _ix5pbm3r;
 
 class Endpoints extends _is.EndpointDispatch {
@@ -34,6 +37,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'jwtRefresh',
+          null,
+        ),
+      'doc': _ijaiwqyj.DocEndpoint()
+        ..initialize(
+          server,
+          'doc',
           null,
         ),
       'hub': _ix5pbm3r.HubEndpoint()
@@ -334,6 +343,150 @@ class Endpoints extends _is.EndpointDispatch {
                         session,
                         refreshToken: params['refreshToken'],
                       ),
+        ),
+      },
+    );
+    connectors['doc'] = _is.EndpointConnector(
+      name: 'doc',
+      endpoint: endpoints['doc']!,
+      methodConnectors: {
+        'tree': _is.MethodConnector(
+          name: 'tree',
+          params: {
+            'hubId': _is.ParameterDescription(
+              name: 'hubId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['doc'] as _ijaiwqyj.DocEndpoint).tree(
+                session,
+                params['hubId'],
+              ),
+        ),
+        'read': _is.MethodConnector(
+          name: 'read',
+          params: {
+            'hubId': _is.ParameterDescription(
+              name: 'hubId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'path': _is.ParameterDescription(
+              name: 'path',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['doc'] as _ijaiwqyj.DocEndpoint).read(
+                session,
+                params['hubId'],
+                params['path'],
+              ),
+        ),
+        'search': _is.MethodConnector(
+          name: 'search',
+          params: {
+            'hubId': _is.ParameterDescription(
+              name: 'hubId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'query': _is.ParameterDescription(
+              name: 'query',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'limit': _is.ParameterDescription(
+              name: 'limit',
+              type: _is.getType<int?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['doc'] as _ijaiwqyj.DocEndpoint).search(
+                session,
+                params['hubId'],
+                params['query'],
+                limit: params['limit'],
+              ),
+        ),
+        'backlinks': _is.MethodConnector(
+          name: 'backlinks',
+          params: {
+            'hubId': _is.ParameterDescription(
+              name: 'hubId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'path': _is.ParameterDescription(
+              name: 'path',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['doc'] as _ijaiwqyj.DocEndpoint).backlinks(
+                session,
+                params['hubId'],
+                params['path'],
+              ),
+        ),
+        'history': _is.MethodConnector(
+          name: 'history',
+          params: {
+            'hubId': _is.ParameterDescription(
+              name: 'hubId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'path': _is.ParameterDescription(
+              name: 'path',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['doc'] as _ijaiwqyj.DocEndpoint).history(
+                session,
+                params['hubId'],
+                params['path'],
+              ),
+        ),
+        'commit': _is.MethodConnector(
+          name: 'commit',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_iv7vs6y1.CommitRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['doc'] as _ijaiwqyj.DocEndpoint).commit(
+                session,
+                params['request'],
+              ),
         ),
       },
     );

@@ -18,6 +18,18 @@ import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
     as _iaic;
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
+import 'package:whisker_client/src/protocol/doc/dto/commit_request.dart'
+    as _iznaxcvz;
+import 'package:whisker_client/src/protocol/doc/dto/commit_result.dart'
+    as _i61nyj0g;
+import 'package:whisker_client/src/protocol/doc/dto/doc_content.dart'
+    as _iyz8etvm;
+import 'package:whisker_client/src/protocol/doc/dto/doc_summary.dart'
+    as _i0nbfzvr;
+import 'package:whisker_client/src/protocol/doc/dto/history_entry.dart'
+    as _ifni3lc9;
+import 'package:whisker_client/src/protocol/doc/dto/search_hit.dart'
+    as _ioseiyuf;
 import 'package:whisker_client/src/protocol/hub/hub.dart' as _izxm48xu;
 import 'protocol.dart' as _il2as5qe;
 
@@ -347,6 +359,85 @@ class EndpointJwtRefresh extends _iacc.EndpointRefreshJwtTokens {
       );
 }
 
+/// Baca, cari, backlink, riwayat, dan commit dokumen Hub.
+/// {@category Endpoint}
+class EndpointDoc extends _isc.EndpointRef {
+  EndpointDoc(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'doc';
+
+  /// Semua dokumen Hub, urut path.
+  _ida.Future<List<_i0nbfzvr.DocSummary>> tree(int hubId) =>
+      caller.callServerEndpoint<List<_i0nbfzvr.DocSummary>>(
+        'doc',
+        'tree',
+        {'hubId': hubId},
+      );
+
+  /// Isi dokumen beserta `blobSha` dan `baseSha` untuk commit berikutnya.
+  _ida.Future<_iyz8etvm.DocContent> read(
+    int hubId,
+    String path,
+  ) => caller.callServerEndpoint<_iyz8etvm.DocContent>(
+    'doc',
+    'read',
+    {
+      'hubId': hubId,
+      'path': path,
+    },
+  );
+
+  /// Pencarian full-text; judul berbobot lebih tinggi dari tag dan isi.
+  _ida.Future<List<_ioseiyuf.SearchHit>> search(
+    int hubId,
+    String query, {
+    int? limit,
+  }) => caller.callServerEndpoint<List<_ioseiyuf.SearchHit>>(
+    'doc',
+    'search',
+    {
+      'hubId': hubId,
+      'query': query,
+      'limit': limit,
+    },
+  );
+
+  /// Dokumen yang menautkan ke [path].
+  _ida.Future<List<_i0nbfzvr.DocSummary>> backlinks(
+    int hubId,
+    String path,
+  ) => caller.callServerEndpoint<List<_i0nbfzvr.DocSummary>>(
+    'doc',
+    'backlinks',
+    {
+      'hubId': hubId,
+      'path': path,
+    },
+  );
+
+  /// Riwayat commit [path].
+  _ida.Future<List<_ifni3lc9.HistoryEntry>> history(
+    int hubId,
+    String path,
+  ) => caller.callServerEndpoint<List<_ifni3lc9.HistoryEntry>>(
+    'doc',
+    'history',
+    {
+      'hubId': hubId,
+      'path': path,
+    },
+  );
+
+  /// Commit + push satu dokumen (lihat spec 4.2).
+  _ida.Future<_i61nyj0g.CommitResult> commit(_iznaxcvz.CommitRequest request) =>
+      caller.callServerEndpoint<_i61nyj0g.CommitResult>(
+        'doc',
+        'commit',
+        {'request': request},
+      );
+}
+
 /// Kelola Hub: daftar, buat, impor vault, indeks ulang.
 /// {@category Endpoint}
 class EndpointHub extends _isc.EndpointRef {
@@ -444,6 +535,7 @@ class Client extends _isc.ServerpodClientShared {
        ) {
     emailIdp = EndpointEmailIdp(this);
     jwtRefresh = EndpointJwtRefresh(this);
+    doc = EndpointDoc(this);
     hub = EndpointHub(this);
     modules = Modules(this);
   }
@@ -451,6 +543,8 @@ class Client extends _isc.ServerpodClientShared {
   late final EndpointEmailIdp emailIdp;
 
   late final EndpointJwtRefresh jwtRefresh;
+
+  late final EndpointDoc doc;
 
   late final EndpointHub hub;
 
@@ -460,6 +554,7 @@ class Client extends _isc.ServerpodClientShared {
   Map<String, _isc.EndpointRef> get endpointRefLookup => {
     'emailIdp': emailIdp,
     'jwtRefresh': jwtRefresh,
+    'doc': doc,
     'hub': hub,
   };
 

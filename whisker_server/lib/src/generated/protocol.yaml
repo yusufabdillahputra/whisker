@@ -13,6 +13,13 @@ emailIdp:
   - hasAccount:
 jwtRefresh:
   - refreshAccessToken:
+doc:
+  - tree:
+  - read:
+  - search:
+  - backlinks:
+  - history:
+  - commit:
 hub:
   - list:
   - create:

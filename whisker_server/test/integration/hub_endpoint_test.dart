@@ -34,12 +34,19 @@ void main() {
 
     test('create_lists_for_owner_only', () async {
       await pushFiles(remote, {'a.md': '# A\n'});
-      final hub = await endpoints.hub.create(me, 'Wiki Angkasa', remoteUrl: remote);
+      final hub = await endpoints.hub.create(
+        me,
+        'Wiki Angkasa',
+        remoteUrl: remote,
+      );
       expect(hub.slug, 'wiki-angkasa');
       expect(hub.headSha, isNotNull);
       expect((await endpoints.hub.list(me)).map((h) => h.id), [hub.id]);
       expect(await endpoints.hub.list(asUser(sessionBuilder, other)), isEmpty);
-      final docs = await HubDocument.db.find(sessionBuilder.build());
+      final docs = await HubDocument.db.find(
+        sessionBuilder.build(),
+        where: (d) => d.hubId.equals(hub.id!),
+      );
       expect(docs.map((d) => d.path), ['a.md']);
     });
 
@@ -58,11 +65,18 @@ void main() {
         }),
       );
       expect(after.headSha, isNotNull);
-      final check = await GitRepo.clone(remote, await tempDir(), branch: 'main');
+      final check = await GitRepo.clone(
+        remote,
+        await tempDir(),
+        branch: 'main',
+      );
       expect((await check.listFiles())..sort(), ['.gitignore', 'a.md']);
       final log = await check.log('a.md');
       expect(log.single.message, 'chore: impor vault');
-      final docs = await HubDocument.db.find(sessionBuilder.build());
+      final docs = await HubDocument.db.find(
+        sessionBuilder.build(),
+        where: (d) => d.hubId.equals(hub.id!),
+      );
       expect(docs.map((d) => d.path), ['a.md']);
     });
 
@@ -76,9 +90,16 @@ void main() {
           'wiki-angkasa/../../jahat.md': 'x',
         }),
       );
-      final check = await GitRepo.clone(remote, await tempDir(), branch: 'main');
+      final check = await GitRepo.clone(
+        remote,
+        await tempDir(),
+        branch: 'main',
+      );
       expect(await check.listFiles(), ['PKM/a.md']);
-      expect(File('${Directory.systemTemp.path}/jahat.md').existsSync(), isFalse);
+      expect(
+        File('${Directory.systemTemp.path}/jahat.md').existsSync(),
+        isFalse,
+      );
     });
 
     test('non_member_rejected', () async {

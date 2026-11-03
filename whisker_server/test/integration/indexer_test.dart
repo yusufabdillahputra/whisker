@@ -8,7 +8,8 @@ import 'package:whisker_server/src/index/indexer.dart';
 import '../unit/git_test_helpers.dart';
 import 'test_tools/serverpod_test_tools.dart';
 
-const adr = '---\ntype: adr\nstatus: accepted\ntags: [x]\n---\n'
+const adr =
+    '---\ntype: adr\nstatus: accepted\ntags: [x]\n---\n'
     '# ADR-001 — Pilih Postgres\n\nKarena andal.\n';
 
 void main() {
@@ -30,21 +31,41 @@ void main() {
       repo = await GitRepo.clone(remote, await tempDir(), branch: 'main');
       hub = await Hub.db.insertRow(
         s,
-        Hub(name: 'H', slug: 'h', remoteUrl: remote, ownerId: const Uuid().v4obj()),
+        Hub(
+          name: 'H',
+          slug: 'h',
+          remoteUrl: remote,
+          ownerId: const Uuid().v4obj(),
+        ),
       );
     });
 
     test('full_index', () async {
       final changed = await indexHub(s, hub, repo);
       expect(changed..sort(), ['B.md', 'PKM/ADR/ADR-001 - A.md']);
-      final docs = await HubDocument.db.find(s, orderBy: (d) => d.path);
+      final docs = await HubDocument.db.find(
+        s,
+        where: (d) => d.hubId.equals(hub.id!),
+        orderBy: (d) => d.path,
+      );
       expect(docs.map((d) => d.path), ['B.md', 'PKM/ADR/ADR-001 - A.md']);
       final a = docs[1];
-      expect([a.title, a.area, a.type, a.status, a.tags], [
-        'ADR-001 — Pilih Postgres', 'knowledge', 'adr', 'accepted', ['x'],
-      ]);
+      expect(
+        [a.title, a.area, a.type, a.status, a.tags],
+        [
+          'ADR-001 — Pilih Postgres',
+          'knowledge',
+          'adr',
+          'accepted',
+          ['x'],
+        ],
+      );
       expect(a.lastCommitSha, await repo.head());
-      final links = await DocumentLink.db.find(s, orderBy: (l) => l.toPath);
+      final links = await DocumentLink.db.find(
+        s,
+        where: (l) => l.hubId.equals(hub.id!),
+        orderBy: (l) => l.toPath,
+      );
       expect(links.map((l) => (l.toPath, l.toDocId)), [
         ('ADR-001 - A', a.id),
         ('Tidak Ada', null),
@@ -65,19 +86,27 @@ void main() {
       await repo.resetHard('origin/main');
       final changed = await indexHub(s, hub, repo, fromSha: from);
       expect(changed..sort(), ['B.md', 'PKM/ADR/ADR-001 - A.md']);
-      final docs = await HubDocument.db.find(s);
+      final docs = await HubDocument.db.find(
+        s,
+        where: (d) => d.hubId.equals(hub.id!),
+      );
       expect(docs.map((d) => d.title), ['B baru']);
-      final links = await DocumentLink.db.find(s);
+      final links = await DocumentLink.db.find(
+        s,
+        where: (l) => l.hubId.equals(hub.id!),
+      );
       expect(links.single.toDocId, isNull);
     });
 
     test('fts_row_written', () async {
       await indexHub(s, hub, repo);
       final r = await s.db.unsafeQuery(
-        "select count(*) from document_fts where vec @@ to_tsquery('simple', 'andal')",
+        "select count(*) from document_fts where hub_id = ${hub.id} and vec @@ to_tsquery('simple', 'andal')",
       );
       expect(r.first.first, 1);
-      final all = await s.db.unsafeQuery('select count(*) from document_fts');
+      final all = await s.db.unsafeQuery(
+        'select count(*) from document_fts where hub_id = ${hub.id}',
+      );
       expect(all.first.first, 2);
     });
   });

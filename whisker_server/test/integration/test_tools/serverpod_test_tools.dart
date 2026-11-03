@@ -20,6 +20,18 @@ import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
 import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _iais;
 import 'package:serverpod_test/serverpod_test.dart' as _ist;
+import 'package:whisker_server/src/generated/doc/dto/commit_request.dart'
+    as _iv7vs6y1;
+import 'package:whisker_server/src/generated/doc/dto/commit_result.dart'
+    as _iid1g887;
+import 'package:whisker_server/src/generated/doc/dto/doc_content.dart'
+    as _i3v8wxnx;
+import 'package:whisker_server/src/generated/doc/dto/doc_summary.dart'
+    as _i0ink730;
+import 'package:whisker_server/src/generated/doc/dto/history_entry.dart'
+    as _iq2g4yng;
+import 'package:whisker_server/src/generated/doc/dto/search_hit.dart'
+    as _ij5ekrht;
 import 'package:whisker_server/src/generated/hub/hub.dart' as _i4ennidr;
 import 'package:whisker_server/src/generated/protocol.dart';
 import 'package:whisker_server/src/generated/endpoints.dart';
@@ -158,6 +170,8 @@ class TestEndpoints {
 
   late final _JwtRefreshEndpoint jwtRefresh;
 
+  late final _DocEndpoint doc;
+
   late final _HubEndpoint hub;
 }
 
@@ -173,6 +187,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     jwtRefresh = _JwtRefreshEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    doc = _DocEndpoint(
       endpoints,
       serializationManager,
     );
@@ -625,6 +643,221 @@ class _JwtRefreshEndpoint {
                   _localCallContext.arguments,
                 )
                 as _ida.Future<_iacs.AuthSuccess>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _DocEndpoint {
+  _DocEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<List<_i0ink730.DocSummary>> tree(
+    _ist.TestSessionBuilder sessionBuilder,
+    int hubId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'doc',
+            method: 'tree',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'doc',
+          methodName: 'tree',
+          parameters: _ist.testObjectToJson({'hubId': hubId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<List<_i0ink730.DocSummary>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_i3v8wxnx.DocContent> read(
+    _ist.TestSessionBuilder sessionBuilder,
+    int hubId,
+    String path,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'doc',
+            method: 'read',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'doc',
+          methodName: 'read',
+          parameters: _ist.testObjectToJson({
+            'hubId': hubId,
+            'path': path,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<_i3v8wxnx.DocContent>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<_ij5ekrht.SearchHit>> search(
+    _ist.TestSessionBuilder sessionBuilder,
+    int hubId,
+    String query, {
+    int? limit,
+  }) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'doc',
+            method: 'search',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'doc',
+          methodName: 'search',
+          parameters: _ist.testObjectToJson({
+            'hubId': hubId,
+            'query': query,
+            'limit': limit,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<List<_ij5ekrht.SearchHit>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<_i0ink730.DocSummary>> backlinks(
+    _ist.TestSessionBuilder sessionBuilder,
+    int hubId,
+    String path,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'doc',
+            method: 'backlinks',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'doc',
+          methodName: 'backlinks',
+          parameters: _ist.testObjectToJson({
+            'hubId': hubId,
+            'path': path,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<List<_i0ink730.DocSummary>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<_iq2g4yng.HistoryEntry>> history(
+    _ist.TestSessionBuilder sessionBuilder,
+    int hubId,
+    String path,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'doc',
+            method: 'history',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'doc',
+          methodName: 'history',
+          parameters: _ist.testObjectToJson({
+            'hubId': hubId,
+            'path': path,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<List<_iq2g4yng.HistoryEntry>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_iid1g887.CommitResult> commit(
+    _ist.TestSessionBuilder sessionBuilder,
+    _iv7vs6y1.CommitRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'doc',
+            method: 'commit',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'doc',
+          methodName: 'commit',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<_iid1g887.CommitResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
