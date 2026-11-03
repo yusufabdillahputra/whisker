@@ -1,0 +1,271 @@
+{
+  "$description": "Design token Whisker (format W3C Design Tokens Community Group). Primitive = skala warna calico; semantic = peran warna yang dipetakan ke FColors Forui. Sumber kebenaran warna: ubah di sini, lalu jalankan design/tools/check-contrast.py.",
+  "color": {
+    "$type": "color",
+    "fur": {
+      "$description": "Bulu calico: krem (putih) sampai hitam hangat. Netral utama.",
+      "50": {
+        "$value": "#FEF9F4"
+      },
+      "100": {
+        "$value": "#F8F1EA"
+      },
+      "200": {
+        "$value": "#ECE4DA"
+      },
+      "300": {
+        "$value": "#DBD1C6"
+      },
+      "400": {
+        "$value": "#C2B9AE"
+      },
+      "500": {
+        "$value": "#A79E95"
+      },
+      "600": {
+        "$value": "#8C857D"
+      },
+      "700": {
+        "$value": "#716B63"
+      },
+      "800": {
+        "$value": "#57514B"
+      },
+      "900": {
+        "$value": "#3C3731"
+      },
+      "950": {
+        "$value": "#221E1A"
+      }
+    },
+    "ginger": {
+      "$description": "Belang oranye calico. Warna brand/primary.",
+      "50": {
+        "$value": "#FEF9F6"
+      },
+      "100": {
+        "$value": "#FEEFE7"
+      },
+      "200": {
+        "$value": "#FEDECB"
+      },
+      "300": {
+        "$value": "#FFC4A1"
+      },
+      "400": {
+        "$value": "#FEA065"
+      },
+      "500": {
+        "$value": "#F47806"
+      },
+      "600": {
+        "$value": "#CD6505"
+      },
+      "700": {
+        "$value": "#A75001"
+      },
+      "800": {
+        "$value": "#813C00"
+      },
+      "900": {
+        "$value": "#5A2800"
+      },
+      "950": {
+        "$value": "#351500"
+      }
+    },
+    "jade": {
+      "$description": "Mata kucing hijau. Success/aksen.",
+      "50": {
+        "$value": "#F1FEF3"
+      },
+      "100": {
+        "$value": "#E0FBE5"
+      },
+      "200": {
+        "$value": "#C5F3CD"
+      },
+      "300": {
+        "$value": "#A3E6B0"
+      },
+      "400": {
+        "$value": "#79D28D"
+      },
+      "500": {
+        "$value": "#56B870"
+      },
+      "600": {
+        "$value": "#429C5A"
+      },
+      "700": {
+        "$value": "#307E46"
+      },
+      "800": {
+        "$value": "#246135"
+      },
+      "900": {
+        "$value": "#154222"
+      },
+      "950": {
+        "$value": "#072610"
+      }
+    },
+    "nose": {
+      "$description": "Hidung merah muda. Destructive/error.",
+      "50": {
+        "$value": "#FEF8F9"
+      },
+      "100": {
+        "$value": "#FEEEF0"
+      },
+      "200": {
+        "$value": "#FEDBDF"
+      },
+      "300": {
+        "$value": "#FFBFC7"
+      },
+      "400": {
+        "$value": "#FF98A8"
+      },
+      "500": {
+        "$value": "#FA6786"
+      },
+      "600": {
+        "$value": "#DF466C"
+      },
+      "700": {
+        "$value": "#B83255"
+      },
+      "800": {
+        "$value": "#8E2641"
+      },
+      "900": {
+        "$value": "#64162B"
+      },
+      "950": {
+        "$value": "#3C0816"
+      }
+    }
+  },
+  "semantic": {
+    "$type": "color",
+    "light": {
+      "background": {
+        "$value": "{color.fur.50}"
+      },
+      "foreground": {
+        "$value": "{color.fur.950}"
+      },
+      "primary": {
+        "$value": "{color.ginger.700}"
+      },
+      "primaryForeground": {
+        "$value": "{color.fur.50}"
+      },
+      "secondary": {
+        "$value": "{color.fur.100}"
+      },
+      "secondaryForeground": {
+        "$value": "{color.fur.900}"
+      },
+      "muted": {
+        "$value": "{color.fur.100}"
+      },
+      "mutedForeground": {
+        "$value": "{color.fur.700}"
+      },
+      "destructive": {
+        "$value": "{color.nose.700}"
+      },
+      "destructiveForeground": {
+        "$value": "{color.fur.50}"
+      },
+      "error": {
+        "$value": "{color.nose.700}"
+      },
+      "errorForeground": {
+        "$value": "{color.fur.50}"
+      },
+      "card": {
+        "$value": "#FFFFFF"
+      },
+      "border": {
+        "$value": "{color.fur.200}"
+      },
+      "input": {
+        "$value": "{color.fur.600}"
+      },
+      "ring": {
+        "$value": "{color.ginger.600}"
+      },
+      "success": {
+        "$value": "{color.jade.700}"
+      },
+      "successForeground": {
+        "$value": "{color.fur.50}"
+      },
+      "brand": {
+        "$value": "{color.ginger.500}"
+      }
+    },
+    "dark": {
+      "background": {
+        "$value": "{color.fur.950}"
+      },
+      "foreground": {
+        "$value": "{color.fur.50}"
+      },
+      "primary": {
+        "$value": "{color.ginger.400}"
+      },
+      "primaryForeground": {
+        "$value": "{color.fur.950}"
+      },
+      "secondary": {
+        "$value": "{color.fur.900}"
+      },
+      "secondaryForeground": {
+        "$value": "{color.fur.50}"
+      },
+      "muted": {
+        "$value": "{color.fur.900}"
+      },
+      "mutedForeground": {
+        "$value": "{color.fur.400}"
+      },
+      "destructive": {
+        "$value": "{color.nose.400}"
+      },
+      "destructiveForeground": {
+        "$value": "{color.fur.950}"
+      },
+      "error": {
+        "$value": "{color.nose.400}"
+      },
+      "errorForeground": {
+        "$value": "{color.fur.950}"
+      },
+      "card": {
+        "$value": "{color.fur.900}"
+      },
+      "border": {
+        "$value": "{color.fur.800}"
+      },
+      "input": {
+        "$value": "{color.fur.600}"
+      },
+      "ring": {
+        "$value": "{color.ginger.400}"
+      },
+      "success": {
+        "$value": "{color.jade.400}"
+      },
+      "successForeground": {
+        "$value": "{color.fur.950}"
+      },
+      "brand": {
+        "$value": "{color.ginger.500}"
+      }
+    }
+  }
+}
