@@ -1,0 +1,30 @@
+services:
+  # Development services
+  postgres:
+    image: ghcr.io/serverpod/postgres:16
+    ports:
+      - "8090:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: whisker
+      POSTGRES_PASSWORD: "ZQahPDfZ7ZBJVpl18YybRa0QCiMv2j2r"
+    volumes:
+      - whisker_data:/var/lib/postgresql/data
+
+
+  # Test services
+  postgres_test:
+    image: ghcr.io/serverpod/postgres:16
+    ports:
+      - "9090:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: whisker_test
+      POSTGRES_PASSWORD: "8YFP2xiDgM2mHIcdu3waynUBmzgmVWEi"
+    volumes:
+      - whisker_test_data:/var/lib/postgresql/data
+
+
+volumes:
+  whisker_data:
+  whisker_test_data:

@@ -3,6 +3,8 @@ description: Parse dan serialisasi markdown vault Whisker dengan round-trip byte
 version: 0.1.0
 publish_to: none
 
+resolution: workspace
+
 environment:
   sdk: ^3.12.0
 

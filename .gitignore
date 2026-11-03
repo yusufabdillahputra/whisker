@@ -21,3 +21,8 @@ node_modules/
 
 # Claude Code — setting lokal per-mesin
 .claude/settings.local.json
+
+# Pub workspace & Serverpod lokal
+pubspec_overrides.yaml
+.serverpod/
+.data/
